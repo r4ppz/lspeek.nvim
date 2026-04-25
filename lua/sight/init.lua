@@ -2,10 +2,14 @@ require("sight.types")
 
 local M = {}
 
-local default_config = {
-  width = 60,
-  height = 40,
-  border = "rounded",
+---@type FloatOpts
+local default_win_config = {
+  width = 70,
+  height = 15,
+  row = 1,
+  col = 1,
+  border = "single",
+  enter = true,
 }
 
 ---@param buf? number
@@ -13,7 +17,7 @@ local default_config = {
 ---@return number win_id
 function M.create_floating_window(buf, opts)
   buf = buf or 0
-  opts = vim.tbl_deep_extend("force", default_config, opts or {})
+  opts = vim.tbl_deep_extend("force", default_win_config, opts or {})
 
   if buf == 0 then
     buf = vim.api.nvim_get_current_buf()
@@ -25,8 +29,8 @@ function M.create_floating_window(buf, opts)
 
   local win_config = {
     relative = "cursor",
-    row = 1,
-    col = 0,
+    row = opts.row,
+    col = opts.col,
     width = opts.width,
     height = opts.height,
     border = opts.border,
@@ -42,7 +46,7 @@ function M.create_floating_window(buf, opts)
   vim.api.nvim_set_option_value("readonly", true, { buf = buf })
   vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
 
-  local win = vim.api.nvim_open_win(buf, true, win_config)
+  local win = vim.api.nvim_open_win(buf, opts.enter, win_config)
   return win
 end
 
