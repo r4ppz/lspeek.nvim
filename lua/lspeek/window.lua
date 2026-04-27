@@ -1,4 +1,4 @@
-local config = require("sight.config")
+local config = require("lspeek.config")
 local M = {}
 
 function M.create_preview(target_buf, local_opts)

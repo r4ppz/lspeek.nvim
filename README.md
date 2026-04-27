@@ -1,3 +1,3 @@
-# Sight.nvim
+# lspeek.nvim
 
-This plugin is used to peek definition.
+A lightweight Neovim utility for peeking LSP definitions and actions.

@@ -1,4 +1,4 @@
-local window = require("sight.window")
+local window = require("lspeek.window")
 local M = {}
 
 function M.preview_definition()
@@ -6,12 +6,12 @@ function M.preview_definition()
 
   vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)
     if err then
-      vim.notify("Sight: " .. err.message, vim.log.levels.ERROR)
+      vim.notify("lspeek: " .. err.message, vim.log.levels.ERROR)
       return
     end
 
     if not result or vim.tbl_isempty(result) then
-      vim.notify("Sight: No definition found", vim.log.levels.WARN)
+      vim.notify("lspeek: No definition found", vim.log.levels.WARN)
       return
     end
 
