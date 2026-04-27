@@ -1,15 +1,21 @@
 local config = require("lspeek.config")
 local M = {}
 
-function M.create_preview(target_buf, local_opts)
-  local opts = vim.tbl_deep_extend("force", config.options, local_opts or {})
-
+local function clone_buffer(buf)
   local scratch_buf = vim.api.nvim_create_buf(false, true)
-  local lines = vim.api.nvim_buf_get_lines(target_buf, 0, -1, false)
+  local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
   vim.api.nvim_buf_set_lines(scratch_buf, 0, -1, false, lines)
 
-  local ft = vim.api.nvim_get_option_value("filetype", { buf = target_buf })
+  local ft = vim.api.nvim_get_option_value("filetype", { buf = buf })
   vim.api.nvim_set_option_value("filetype", ft, { buf = scratch_buf })
+
+  return scratch_buf
+end
+
+function M.create_preview(target_buf)
+  local opts = config.options
+
+  local scratch_buf = clone_buffer(target_buf)
 
   local win_config = {
     relative = "cursor",
@@ -26,12 +32,14 @@ function M.create_preview(target_buf, local_opts)
     nowait = true,
   })
 
-  local buf_options = { modifiable = false, readonly = true, bufhidden = "wipe" }
-  for opt, val in pairs(buf_options) do
-    vim.api.nvim_set_option_value(opt, val, { buf = scratch_buf })
-  end
+  local win = vim.api.nvim_open_win(scratch_buf, opts.enter, win_config)
 
-  return vim.api.nvim_open_win(scratch_buf, opts.enter, win_config)
+  vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+  vim.api.nvim_set_option_value("modifiable", false, { buf = scratch_buf })
+  vim.api.nvim_set_option_value("readonly", true, { buf = scratch_buf })
+  vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = scratch_buf })
+
+  return win
 end
 
 return M
