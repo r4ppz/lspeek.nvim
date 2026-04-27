@@ -4,8 +4,8 @@ M.setup = function(opts)
   require("lspeek.config").setup(opts)
 end
 
-M.preview_definition = function()
-  require("lspeek.core").preview_definition()
+M.peek_definition = function()
+  require("lspeek.core").peek_definition()
 end
 
 return M

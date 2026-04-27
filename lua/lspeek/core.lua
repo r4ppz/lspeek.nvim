@@ -1,7 +1,7 @@
 local window = require("lspeek.window")
 local M = {}
 
-function M.preview_definition()
+function M.peek_definition()
   local params = vim.lsp.util.make_position_params(0, "utf-16")
 
   vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)

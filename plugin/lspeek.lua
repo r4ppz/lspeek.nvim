@@ -1,8 +1,8 @@
-if vim.fn.has("nvim-0.8") == 0 then
-  vim.api.nvim_err_writeln("lspeek.nvim requires Neovim 0.8+")
+if vim.g.loaded_lspeek then
   return
 end
+vim.g.loaded_lspeek = 1
 
-vim.api.nvim_create_user_command("LspeekDef", function()
-  require("lspeek").preview_definition()
+vim.api.nvim_create_user_command("LSPeekDef", function()
+  require("lspeek").peek_definition()
 end, { desc = "Preview LSP definition in a float" })
