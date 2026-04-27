@@ -48,7 +48,7 @@ function M.create_floating_window(buf, local_opts)
   local buf_options = {
     modifiable = false,
     readonly = true,
-    bufhidden = true,
+    bufhidden = "wipe",
   }
 
   for opt, val in ipairs(buf_options) do
