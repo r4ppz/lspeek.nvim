@@ -23,7 +23,7 @@ end
 function M.preview_definition()
   local params = vim.lsp.util.make_position_params(0, "utf-16")
 
-  local function callback(err, result, clx, _)
+  local function callback(err, result, _, _)
     if err then
       vim.notify("LSP Error: " .. err.message, vim.log.levels.ERROR)
     end
@@ -52,14 +52,16 @@ function M.preview_definition()
   vim.lsp.buf_request(0, "textDocument/definition", params, callback)
 end
 
-function M.create_floating_window(buf, local_opts)
-  buf = buf or vim.api.nvim_get_current_buf()
-
+function M.create_floating_window(target_buf, local_opts)
   local config = vim.tbl_deep_extend("force", M.config, local_opts or {})
 
-  if not vim.api.nvim_buf_is_valid(buf) then
-    error("Invalid buffer")
-  end
+  local scratch_buf = vim.api.nvim_create_buf(false, true)
+
+  local lines = vim.api.nvim_buf_get_lines(target_buf, 0, -1, false)
+  vim.api.nvim_buf_set_lines(scratch_buf, 0, -1, false, lines)
+
+  local ft = vim.api.nvim_get_option_value("filetype", { buf = target_buf })
+  vim.api.nvim_set_option_value("filetype", ft, { buf = scratch_buf })
 
   local win_config = {
     relative = "cursor",
@@ -71,7 +73,7 @@ function M.create_floating_window(buf, local_opts)
   }
 
   vim.keymap.set("n", config.keymaps.close, "<cmd>close<cr>", {
-    buffer = buf,
+    buffer = scratch_buf,
     silent = true,
     nowait = true,
     desc = "Close Sight Window",
@@ -84,10 +86,10 @@ function M.create_floating_window(buf, local_opts)
   }
 
   for opt, val in pairs(buf_options) do
-    vim.api.nvim_set_option_value(opt, val, { buf = buf })
+    vim.api.nvim_set_option_value(opt, val, { buf = scratch_buf })
   end
 
-  local win = vim.api.nvim_open_win(buf, config.enter, win_config)
+  local win = vim.api.nvim_open_win(scratch_buf, config.enter, win_config)
   return win
 end
 
