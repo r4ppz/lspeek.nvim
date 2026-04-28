@@ -16,7 +16,7 @@ function M.create_preview(buf, filename, row, col)
 
   local win = vim.api.nvim_open_win(buf, opts.enter, win_config)
 
-  -- Original states
+  -- Save original states
   local old_modifiable = vim.bo[buf].modifiable
   local old_buflisted = vim.bo[buf].buflisted
   local old_winbar = vim.api.nvim_get_option_value("winbar", { win = win })
@@ -24,6 +24,7 @@ function M.create_preview(buf, filename, row, col)
 
   -- Set custom options for the peek window only
   vim.bo[buf].modifiable = false
+  vim.bo[buf].buflisted = false
   vim.api.nvim_set_option_value("winbar", "", { win = win })
   vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
 
@@ -39,6 +40,7 @@ function M.create_preview(buf, filename, row, col)
   local function restore_state()
     vim.bo[buf].modifiable = old_modifiable
     vim.bo[buf].buflisted = old_buflisted
+    vim.bo[buf].buflisted = true -- force
     vim.api.nvim_set_option_value("winbar", old_winbar, { win = win })
     vim.api.nvim_set_option_value("signcolumn", old_signcolumn, { win = win })
   end
