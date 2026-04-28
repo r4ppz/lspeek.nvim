@@ -30,12 +30,18 @@ function M.peek_definition()
       vim.fn.bufload(target_buf)
     end
 
-    local win = window.create_preview(target_buf, filename)
-
     local range = location.range or location.targetSelectionRange
+    local row = 1
+    local col = 0
     if range then
-      local row = range.start.line + 1
-      vim.api.nvim_win_set_cursor(win, { row, range.start.character })
+      row = range.start.line + 1
+      col = range.start.character
+    end
+
+    local win = window.create_preview(target_buf, filename, row, col)
+
+    if range then
+      vim.api.nvim_win_set_cursor(win, { row, col })
     end
   end
 
