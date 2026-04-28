@@ -1,10 +1,14 @@
 local window = require("lspeek.window")
 local M = {}
 
+--- Opens a preview window to display the definition of the symbol under the cursor.
+--- Utilizes the LSP `textDocument/definition` request to fetch the definition location.
+--- If the definition is found, it loads the target buffer and creates a preview window.
+--- If no definition is found or an error occurs, a notification is displayed.
 function M.peek_definition()
   local params = vim.lsp.util.make_position_params(0, "utf-16")
 
-  vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)
+  local callback = function(err, result)
     if err then
       vim.notify("lspeek: " .. err.message, vim.log.levels.ERROR)
       return
@@ -15,6 +19,7 @@ function M.peek_definition()
       return
     end
 
+    -- Get only the first def if its a list
     local location = vim.islist(result) and result[1] or result
     local target_buf = vim.uri_to_bufnr(location.uri or location.targetUri)
 
@@ -29,7 +34,9 @@ function M.peek_definition()
       local row = range.start.line + 1
       vim.api.nvim_win_set_cursor(win, { row, range.start.character })
     end
-  end)
+  end
+
+  vim.lsp.buf_request(0, "textDocument/definition", params, callback)
 end
 
 return M
