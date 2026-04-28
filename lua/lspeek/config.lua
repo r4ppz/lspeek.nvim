@@ -5,10 +5,15 @@ M.defaults = {
     width = 70,
     height = 15,
     border = "single",
+    title_pos = "center",
   },
   enter = true,
+
   keymaps = {
     close = "q",
+    split = "s",
+    vsplit = "v",
+    enter = "<CR>",
   },
 }
 

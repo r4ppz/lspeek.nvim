@@ -1,3 +1,3 @@
 # lspeek.nvim
 
-A lightweight Neovim utility plugin for peeking LSP definitions and actions.
+A Neovim plugin for peeking LSP definitions and actions.
