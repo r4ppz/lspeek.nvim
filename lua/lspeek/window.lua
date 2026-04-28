@@ -1,8 +1,15 @@
 local M = {}
 
+---Creates a floating preview window displaying the definition buffer
+---@param buf integer Buffer number to display in the preview window
+---@param filename string Filename to display in the window title
+---@param row integer Line number to position the cursor (1-indexed)
+---@param col integer Column number to position the cursor (0-indexed)
+---@return integer win Window handle of the created preview window
 function M.create_preview(buf, filename, row, col)
   local opts = require("lspeek.config").options
 
+  ---@type vim.api.keyset.win_config
   local win_config = {
     relative = "cursor",
     row = 1,
@@ -26,6 +33,8 @@ function M.create_preview(buf, filename, row, col)
   vim.api.nvim_set_option_value("winbar", "", { win = win })
   vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
 
+  ---Removes all keymaps set by lspeek from the preview buffer
+  ---@return nil
   local function cleanup_keymaps()
     if vim.api.nvim_buf_is_valid(buf) then
       pcall(vim.keymap.del, "n", opts.keymaps.close, { buffer = buf })
@@ -35,6 +44,8 @@ function M.create_preview(buf, filename, row, col)
     end
   end
 
+  ---Restores original buffer and window options
+  ---@return nil
   local function restore_state()
     vim.bo[buf].modifiable = old_modifiable
     vim.bo[buf].buflisted = true -- force
@@ -42,6 +53,8 @@ function M.create_preview(buf, filename, row, col)
     vim.api.nvim_set_option_value("signcolumn", old_signcolumn, { win = win })
   end
 
+  ---Closes the preview window and restores all original state
+  ---@return nil
   local function close_and_restore()
     cleanup_keymaps()
     restore_state()
@@ -67,7 +80,7 @@ function M.create_preview(buf, filename, row, col)
     buffer = buf,
     silent = true,
     nowait = true,
-    desc = "Vertiable split",
+    desc = "Vertical split",
   })
 
   vim.keymap.set("n", opts.keymaps.split, function()
