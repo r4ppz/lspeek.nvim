@@ -24,18 +24,18 @@ function M.peek_definition()
     end
 
     -- Get only the first def if its a list
-    ---@type lsp.Location
+    ---@type lsp.Location|lsp.LocationLink
     local location = vim.islist(result) and result[1] or result
-    local target_buf = vim.uri_to_bufnr(location.uri)
+    local target_buf = vim.uri_to_bufnr(location.uri or location.targetUri)
 
-    local target_fname = vim.uri_to_fname(location.uri)
+    local target_fname = vim.uri_to_fname(location.uri or location.targetUri)
     local filename = vim.fn.fnamemodify(target_fname, ":t")
 
     if not vim.api.nvim_buf_is_loaded(target_buf) then
       vim.fn.bufload(target_buf)
     end
 
-    local range = location.range
+    local range = location.range or location.targetSelectionRange
     local row = 1
     local col = 0
     if range then
