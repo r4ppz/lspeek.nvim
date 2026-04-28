@@ -1,7 +1,7 @@
 local config = require("lspeek.config")
 local M = {}
 
-function M.create_preview(buf)
+function M.create_preview(buf, filename)
   local opts = config.options
 
   local win_config = {
@@ -11,6 +11,8 @@ function M.create_preview(buf)
     width = opts.window.width,
     height = opts.window.height,
     border = opts.window.border,
+    title = filename,
+    title_pos = "center",
   }
   local win = vim.api.nvim_open_win(buf, opts.enter, win_config)
 

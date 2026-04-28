@@ -23,11 +23,14 @@ function M.peek_definition()
     local location = vim.islist(result) and result[1] or result
     local target_buf = vim.uri_to_bufnr(location.uri or location.targetUri)
 
+    local target_fname = vim.uri_to_fname(location.uri or location.targetUri)
+    local filename = vim.fn.fnamemodify(target_fname, ":t")
+
     if not vim.api.nvim_buf_is_loaded(target_buf) then
       vim.fn.bufload(target_buf)
     end
 
-    local win = window.create_preview(target_buf)
+    local win = window.create_preview(target_buf, filename)
 
     local range = location.range or location.targetSelectionRange
     if range then
