@@ -43,10 +43,10 @@ function M.peek_definition()
       col = range.start.character
     end
 
-    local win = window.create_preview(target_buf, filename, row, col)
+    local preview = window.create_preview(target_buf, filename, row, col)
 
     if range then
-      vim.api.nvim_win_set_cursor(win, { row, col })
+      vim.api.nvim_win_set_cursor(preview.win, { row, col })
     end
   end
 

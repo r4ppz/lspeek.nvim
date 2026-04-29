@@ -1,130 +1,126 @@
+local opts = require("lspeek.config").options
+
 local M = {}
 
----Creates a floating preview window displaying the definition buffer
----@param buf integer Buffer number to display in the preview window
----@param filename string Filename to display in the window title
----@param row integer Line number to position the cursor (1-indexed)
----@param col integer Column number to position the cursor (0-indexed)
----@return integer win Window handle of the created preview window
-function M.create_preview(buf, filename, row, col)
-  local opts = require("lspeek.config").options
+local Preview = {}
+Preview.__index = Preview
 
-  ---@type vim.api.keyset.win_config
+function Preview:close()
+  if vim.api.nvim_win_is_valid(self.win) then
+    vim.api.nvim_win_close(self.win, true)
+
+    pcall(vim.keymap.del, "n", opts.keymaps.close, { buffer = self.buf })
+    pcall(vim.keymap.del, "n", opts.keymaps.vsplit, { buffer = self.buf })
+    pcall(vim.keymap.del, "n", opts.keymaps.split, { buffer = self.buf })
+    pcall(vim.keymap.del, "n", opts.keymaps.enter, { buffer = self.buf })
+
+    vim.bo[self.buf].modifiable = true
+  end
+end
+
+-- Smart Window Helper
+local function get_smart_opts(width, height)
+  local stats = vim.api.nvim_list_uis()[1]
+  local screen_w = stats.width
+  local screen_h = stats.height
+  local cursor_pos = vim.fn.screenpos(0, vim.fn.line("."), vim.fn.col("."))
+
+  local row, col, anchor
+
+  -- Vertical logic: Space below vs Space above
+  if cursor_pos.row + height + 2 > screen_h then
+    anchor = "S" -- Pop UP
+    row = 0
+  else
+    anchor = "N" -- Pop DOWN
+    row = 1
+  end
+
+  -- Horizontal logic
+  if cursor_pos.col + width > screen_w then
+    anchor = anchor .. "E" -- Align to right
+    col = 1
+  else
+    anchor = anchor .. "W" -- Align to left
+    col = 0
+  end
+
+  return { row = row, col = col, anchor = anchor }
+end
+
+--- Creates a floating preview window for a given buffer and file.
+---
+--- @param buf integer Buffer handle to display in the preview window.
+--- @param filename string Name of the file being previewed (used as window title).
+--- @param target_row integer Target row to jump to when entering the buffer.
+--- @param target_col integer Target column to jump to when entering the buffer.
+--- @return table Preview window instance with methods and state.
+function M.create_preview(buf, filename, target_row, target_col)
+  local smart = get_smart_opts(opts.window.width, opts.window.height)
+
+  local instance = {
+    buf = buf,
+    filename = filename,
+    target_pos = { target_row, target_col },
+  }
+
   local win_config = {
     relative = "cursor",
-    row = 1,
-    col = 1,
+    anchor = smart.anchor,
+    row = smart.row,
+    col = smart.col,
     width = opts.window.width,
     height = opts.window.height,
     border = opts.window.border,
     title = filename,
     title_pos = opts.window.title_pos,
+    style = "minimal",
   }
 
-  local win = vim.api.nvim_open_win(buf, opts.enter, win_config)
+  instance.win = vim.api.nvim_open_win(buf, opts.enter, win_config)
 
-  -- Save original states
-  local old_modifiable = vim.bo[buf].modifiable
-  local old_winbar = vim.api.nvim_get_option_value("winbar", { win = win })
-  local old_signcolumn = vim.api.nvim_get_option_value("signcolumn", { win = win })
+  -- Set the "Rulebook"
+  setmetatable(instance, Preview)
 
-  -- Set custom options for the peek window only
-  vim.bo[buf].modifiable = false
-  vim.api.nvim_set_option_value("winbar", "", { win = win })
-  vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+  -- Apply window-local options
+  vim.api.nvim_set_option_value("winbar", "", { win = instance.win })
+  vim.api.nvim_set_option_value("signcolumn", "no", { win = instance.win })
+  vim.bo[instance.buf].modifiable = false
 
-  ---Removes all keymaps set by lspeek from the preview buffer
-  ---@return nil
-  local function cleanup_keymaps()
-    if vim.api.nvim_buf_is_valid(buf) then
-      pcall(vim.keymap.del, "n", opts.keymaps.close, { buffer = buf })
-      pcall(vim.keymap.del, "n", opts.keymaps.vsplit, { buffer = buf })
-      pcall(vim.keymap.del, "n", opts.keymaps.split, { buffer = buf })
-      pcall(vim.keymap.del, "n", opts.keymaps.enter, { buffer = buf })
-    end
-  end
-
-  ---Restores original buffer and window options
-  ---@return nil
-  local function restore_state()
-    vim.bo[buf].modifiable = old_modifiable
-    vim.bo[buf].buflisted = true -- force
-    vim.api.nvim_set_option_value("winbar", old_winbar, { win = win })
-    vim.api.nvim_set_option_value("signcolumn", old_signcolumn, { win = win })
-  end
-
-  ---Closes the preview window and restores all original state
-  ---@return nil
-  local function close_and_restore()
-    cleanup_keymaps()
-    restore_state()
-    if vim.api.nvim_win_is_valid(win) then
-      vim.api.nvim_win_close(win, true)
-    end
-  end
+  -- Set keymaps using the instance
+  local map_opts = { buffer = buf, silent = true, nowait = true }
 
   vim.keymap.set("n", opts.keymaps.close, function()
-    close_and_restore()
-  end, {
-    buffer = buf,
-    silent = true,
-    nowait = true,
-    desc = "Close LSPeek",
-  })
+    instance:close()
+  end, map_opts)
 
   vim.keymap.set("n", opts.keymaps.vsplit, function()
-    close_and_restore()
+    instance:close()
     vim.cmd("vsplit")
     vim.api.nvim_set_current_buf(buf)
-  end, {
-    buffer = buf,
-    silent = true,
-    nowait = true,
-    desc = "Vertical split",
-  })
+  end, map_opts)
 
   vim.keymap.set("n", opts.keymaps.split, function()
-    close_and_restore()
+    instance:close()
     vim.cmd("split")
     vim.api.nvim_set_current_buf(buf)
-  end, {
-    buffer = buf,
-    silent = true,
-    nowait = true,
-    desc = "Horizontal split",
-  })
+  end, map_opts)
 
   vim.keymap.set("n", opts.keymaps.enter, function()
-    local current_buf_name = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":t")
-    if current_buf_name == filename then
-      -- Same buffer - jump cursor to definition
-      close_and_restore()
-      vim.api.nvim_set_current_buf(buf)
-      vim.api.nvim_win_set_cursor(0, { row, col })
+    local target_path = vim.api.nvim_buf_get_name(instance.buf)
+    local current_path = vim.api.nvim_buf_get_name(0)
+
+    instance:close()
+
+    if current_path == target_path then
+      vim.api.nvim_win_set_cursor(0, instance.target_pos)
     else
-      -- Different buffer - open in edit mode
-      close_and_restore()
-      vim.cmd("edit")
-      vim.api.nvim_set_current_buf(buf)
+      vim.cmd("edit " .. vim.fn.fnameescape(target_path))
+      vim.api.nvim_win_set_cursor(0, instance.target_pos)
     end
-  end, {
-    buffer = buf,
-    silent = true,
-    nowait = true,
-    desc = "Open a new buffer",
-  })
+  end, map_opts)
 
-  vim.api.nvim_create_autocmd("WinClosed", {
-    pattern = tostring(win),
-    once = true,
-    callback = function()
-      if vim.api.nvim_buf_is_valid(buf) then
-        close_and_restore()
-      end
-    end,
-  })
-
-  return win
+  return instance
 end
 
 return M
