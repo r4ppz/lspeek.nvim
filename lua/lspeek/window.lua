@@ -103,10 +103,9 @@ end
 --- @param target_col integer Target column to jump to when entering the buffer.
 --- @return table|nil Preview window instance with methods and state.
 function M.create_preview(buf, filename, target_row, target_col)
-  local parent = stack[#stack]
-
   -- Enforce stack limit
   local limit = opts.stack_limit or 0
+
   if limit > 0 and #stack >= limit then
     vim.notify("lspeek: " .. "You're doing too much", vim.log.levels.ERROR)
     return nil
@@ -118,55 +117,22 @@ function M.create_preview(buf, filename, target_row, target_col)
     target_pos = { target_row, target_col },
   }
 
-  local win_config
+  local smart = get_smart_opts(opts.window.width, opts.window.height)
 
-  if not parent or not vim.api.nvim_win_is_valid(parent.win) then
-    -- No stacking, use smart cursor logic
-    local smart = get_smart_opts(opts.window.width, opts.window.height)
-    win_config = {
-      relative = "cursor",
-      anchor = smart.anchor,
-      row = smart.row,
-      col = smart.col,
-      width = opts.window.width,
-      height = opts.window.height,
-      border = opts.window.border,
-      title = filename,
-      title_pos = opts.window.title_pos,
-      style = "minimal",
-    }
-  else
-    win_config = {
-      relative = "win",
-      win = parent.win,
-      row = 1,
-      col = 1,
-      width = math.max(1, parent.width - 1),
-      height = math.max(1, parent.height - 1),
-      border = opts.window.border,
-      title = filename,
-      title_pos = opts.window.title_pos,
-      style = "minimal",
-    }
-  end
+  local win_config = {
+    relative = "cursor",
+    anchor = smart.anchor,
+    row = smart.row,
+    col = smart.col,
+    width = opts.window.width,
+    height = opts.window.height,
+    border = opts.window.border,
+    title = filename,
+    title_pos = opts.window.title_pos,
+    style = "minimal",
+  }
 
-  instance.win = vim.api.nvim_open_win(buf, opts.enter, win_config)
-
-  -- nvim_win_get_position returns {row, col} (0-indexed screen coords)
-  local ok_pos, pos = pcall(vim.api.nvim_win_get_position, instance.win)
-  if ok_pos and type(pos) == "table" and pos[1] and pos[2] then
-    instance.row = pos[1] + 1
-    instance.col = pos[2] + 1
-  else
-    instance.row = win_config.row
-    instance.col = win_config.col
-  end
-
-  -- Query actual width/height to be safe
-  local ok_w, w = pcall(vim.api.nvim_win_get_width, instance.win)
-  local ok_h, h = pcall(vim.api.nvim_win_get_height, instance.win)
-  instance.width = (ok_w and w) and w or win_config.width
-  instance.height = (ok_h and h) and h or win_config.height
+  instance.win = vim.api.nvim_open_win(buf, true, win_config)
 
   -- Set the "Rulebook"
   setmetatable(instance, Peek)
