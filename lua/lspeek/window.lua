@@ -5,8 +5,8 @@ local M = {}
 -- Holds all active preview instances
 local stack = {}
 
-local Preview = {}
-Preview.__index = Preview
+local Peek = {}
+Peek.__index = Peek
 
 local function is_buffer_in_stack(buf)
   for _, inst in ipairs(stack) do
@@ -27,40 +27,40 @@ local function find_instance_by_win(win)
   return nil
 end
 
-function Preview:close()
+function Peek:close()
+  -- Close the window if it's still valid
   if vim.api.nvim_win_is_valid(self.win) then
-    vim.api.nvim_win_close(self.win, true)
+    pcall(vim.api.nvim_win_close, self.win, true)
+  end
+
+  -- Remove this specific instance from the stack
+  for i, inst in ipairs(stack) do
+    if inst == self then
+      table.remove(stack, i)
+      break
+    end
+  end
+
+  -- If we registered a WinClosed autocmd for this window, remove it now
+  if self._winclosed_au then
+    pcall(vim.api.nvim_del_autocmd, self._winclosed_au)
+    self._winclosed_au = nil
+  end
+
+  -- Cleanup buffer-local settings ONLY if no other stack windows use this buffer
+  if not is_buffer_in_stack(self.buf) and vim.api.nvim_buf_is_valid(self.buf) then
     vim.bo[self.buf].modifiable = true
+    pcall(vim.keymap.del, "n", opts.keymaps.close, { buffer = self.buf })
+    pcall(vim.keymap.del, "n", opts.keymaps.vsplit, { buffer = self.buf })
+    pcall(vim.keymap.del, "n", opts.keymaps.split, { buffer = self.buf })
+    pcall(vim.keymap.del, "n", opts.keymaps.enter, { buffer = self.buf })
+  end
 
-    -- Remove this specific instance from the stack first
-    for i, inst in ipairs(stack) do
-      if inst == self then
-        table.remove(stack, i)
-        break
-      end
-    end
-
-    -- If we registered a WinClosed autocmd for this window, remove it now
-    if self._winclosed_au then
-      pcall(vim.api.nvim_del_autocmd, self._winclosed_au)
-      self._winclosed_au = nil
-    end
-
-    -- Cleanup buffer-local settings ONLY if no other stack windows use this buffer
-    if not is_buffer_in_stack(self.buf) and vim.api.nvim_buf_is_valid(self.buf) then
-      vim.bo[self.buf].modifiable = true
-      pcall(vim.keymap.del, "n", opts.keymaps.close, { buffer = self.buf })
-      pcall(vim.keymap.del, "n", opts.keymaps.vsplit, { buffer = self.buf })
-      pcall(vim.keymap.del, "n", opts.keymaps.split, { buffer = self.buf })
-      pcall(vim.keymap.del, "n", opts.keymaps.enter, { buffer = self.buf })
-    end
-
-    -- Focus management
-    if #stack > 0 then
-      local top = stack[#stack]
-      if vim.api.nvim_win_is_valid(top.win) then
-        vim.api.nvim_set_current_win(top.win)
-      end
+  -- Restore focus to the top-most preview window if present
+  if #stack > 0 then
+    local top = stack[#stack]
+    if vim.api.nvim_win_is_valid(top.win) then
+      vim.api.nvim_set_current_win(top.win)
     end
   end
 end
@@ -113,8 +113,8 @@ function M.create_preview(buf, filename, target_row, target_col)
 
   local win_config
 
-  if not parent then
-    -- No stacking, use your smart cursor logic
+  if not parent or not vim.api.nvim_win_is_valid(parent.win) then
+    -- No stacking, use smart cursor logic
     local smart = get_smart_opts(opts.window.width, opts.window.height)
     win_config = {
       relative = "cursor",
@@ -129,29 +129,40 @@ function M.create_preview(buf, filename, target_row, target_col)
       style = "minimal",
     }
   else
-    -- Stacking: offset from the previous window's position
-    local p_cfg = vim.api.nvim_win_get_config(parent.win)
-
-    -- Extract raw numbers from Neovim's coordinate objects
-    local p_row = type(p_cfg.row) == "table" and p_cfg.row[false] or p_cfg.row
-    local p_col = type(p_cfg.col) == "table" and p_cfg.col[false] or p_cfg.col
-
     win_config = {
-      relative = "editor",
-      row = p_row + 1,
-      col = p_col + 2,
-      width = p_cfg.width - 4,
-      height = p_cfg.height - 2,
+      relative = "win",
+      win = parent.win,
+      row = 1,
+      col = 1,
+      width = math.max(1, parent.width - 1),
+      height = math.max(1, parent.height - 1),
       border = opts.window.border,
       title = filename,
       title_pos = opts.window.title_pos,
       style = "minimal",
     }
   end
+
   instance.win = vim.api.nvim_open_win(buf, opts.enter, win_config)
 
+  -- nvim_win_get_position returns {row, col} (0-indexed screen coords)
+  local ok_pos, pos = pcall(vim.api.nvim_win_get_position, instance.win)
+  if ok_pos and type(pos) == "table" and pos[1] and pos[2] then
+    instance.row = pos[1] + 1
+    instance.col = pos[2] + 1
+  else
+    instance.row = win_config.row
+    instance.col = win_config.col
+  end
+
+  -- Query actual width/height to be safe
+  local ok_w, w = pcall(vim.api.nvim_win_get_width, instance.win)
+  local ok_h, h = pcall(vim.api.nvim_win_get_height, instance.win)
+  instance.width = (ok_w and w) and w or win_config.width
+  instance.height = (ok_h and h) and h or win_config.height
+
   -- Set the "Rulebook"
-  setmetatable(instance, Preview)
+  setmetatable(instance, Peek)
 
   -- Apply window-local options
   vim.api.nvim_set_option_value("winbar", "", { win = instance.win })
