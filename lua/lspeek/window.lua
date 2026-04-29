@@ -101,9 +101,16 @@ end
 --- @param filename string Name of the file being previewed (used as window title).
 --- @param target_row integer Target row to jump to when entering the buffer.
 --- @param target_col integer Target column to jump to when entering the buffer.
---- @return table Preview window instance with methods and state.
+--- @return table|nil Preview window instance with methods and state.
 function M.create_preview(buf, filename, target_row, target_col)
   local parent = stack[#stack]
+
+  -- Enforce stack limit
+  local limit = opts.stack_limit or 0
+  if limit > 0 and #stack >= limit then
+    vim.notify("lspeek: " .. "You're doing too much", vim.log.levels.ERROR)
+    return nil
+  end
 
   local instance = {
     buf = buf,

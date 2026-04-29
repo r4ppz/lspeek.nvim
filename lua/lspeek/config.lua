@@ -14,6 +14,7 @@
 ---@field window? WindowConfig Window configuration options
 ---@field enter? boolean Whether to enter the preview window on open
 ---@field keymaps? KeymapConfig Keymap configuration
+---@field stack_limit? integer Maximum number of nested preview windows to keep on the stack
 
 local M = {}
 
@@ -25,6 +26,8 @@ M.defaults = {
     border = "single",
     title_pos = "center",
   },
+
+  stack_limit = 5,
   enter = true,
 
   keymaps = {

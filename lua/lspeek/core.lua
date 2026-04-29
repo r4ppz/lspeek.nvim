@@ -43,10 +43,16 @@ function M.peek_definition()
       col = range.start.character
     end
 
-    local preview = window.create_preview(target_buf, filename, row, col)
+    local ok, preview = pcall(window.create_preview, target_buf, filename, row, col)
 
-    if range then
-      vim.api.nvim_win_set_cursor(preview.win, { row, col })
+    -- If create_preview failed or returned nil
+    if not ok or not preview then
+      return
+    end
+
+    -- Guard against unexpected invalid preview window handle
+    if range and preview.win and vim.api.nvim_win_is_valid(preview.win) then
+      pcall(vim.api.nvim_win_set_cursor, preview.win, { row, col })
     end
   end
 
