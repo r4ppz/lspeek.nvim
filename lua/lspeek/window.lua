@@ -2,6 +2,13 @@ local config = require("lspeek.config").options
 
 local M = {}
 
+--- Preview instance type used by lspeek.window
+---@class lspeek.Preview
+---@field buf integer buffer number being previewed
+---@field win number|nil window id for the floating preview (may be nil until created)
+---@field target_pos { row: integer, col: integer } named fields for target cursor position
+---@field _winclosed_au integer|nil autocmd id for WinClosed cleanup (if created)
+---@field close fun(self) method to close this preview
 local Preview = {}
 Preview.__index = Preview
 
@@ -9,6 +16,8 @@ Preview.__index = Preview
 local stack = {}
 
 --- Checks if a given buffer is present in the preview stack.
+--- @param buf integer
+--- @return boolean
 local function is_buffer_in_previews(buf)
   for _, preview in ipairs(stack) do
     if preview.buf == buf then
@@ -19,6 +28,8 @@ local function is_buffer_in_previews(buf)
 end
 
 --- Retrieves the preview entry associated with a given window.
+--- @param win number|nil
+--- @return lspeek.Preview|nil
 local function get_preview_by_win(win)
   for _, preview in ipairs(stack) do
     if preview.win == win then
@@ -29,7 +40,7 @@ local function get_preview_by_win(win)
 end
 
 function Preview:close()
-  if vim.api.nvim_win_is_valid(self.win) then
+  if self.win and vim.api.nvim_win_is_valid(self.win) then
     pcall(vim.api.nvim_win_close, self.win, true)
   end
 
@@ -55,7 +66,7 @@ function Preview:close()
 
   if #stack > 0 then
     local top = stack[#stack]
-    if vim.api.nvim_win_is_valid(top.win) then
+    if top.win and vim.api.nvim_win_is_valid(top.win) then
       vim.api.nvim_set_current_win(top.win)
     end
   end
@@ -107,7 +118,8 @@ local function set_preview_keymaps(buf)
 
     -- Snapshot data we need from the preview before closing everything
     local target_buf = preview.buf
-    local target_pos = preview.target_pos
+    local tp = preview.target_pos
+    local target_pos = { tp.row, tp.col }
 
     -- Close all previews, then open the target in a vertical split
     M.close_all_previews()
@@ -124,7 +136,8 @@ local function set_preview_keymaps(buf)
     end
 
     local target_buf = preview.buf
-    local target_pos = preview.target_pos
+    local tp = preview.target_pos
+    local target_pos = { tp.row, tp.col }
 
     M.close_all_previews()
 
@@ -141,7 +154,8 @@ local function set_preview_keymaps(buf)
 
     -- Snapshot path/pos before closing previews
     local target_path = vim.api.nvim_buf_get_name(preview.buf)
-    local target_pos = preview.target_pos
+    local tp = preview.target_pos
+    local target_pos = { tp.row, tp.col }
 
     -- Close all previews first
     M.close_all_previews()
@@ -185,7 +199,7 @@ end
 --- @param filename string
 --- @param target_row integer
 --- @param target_col integer
---- @return table|nil
+--- @return lspeek.Preview|nil
 function M.create_preview_floating_window(buf, filename, target_row, target_col)
   local limit = config.stack_limit or 0
   if limit > 0 and #stack >= limit then
@@ -195,7 +209,7 @@ function M.create_preview_floating_window(buf, filename, target_row, target_col)
 
   local instance = {
     buf = buf,
-    target_pos = { target_row, target_col },
+    target_pos = { row = target_row, col = target_col },
   }
   setmetatable(instance, Preview)
 

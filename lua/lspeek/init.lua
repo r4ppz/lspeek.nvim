@@ -4,7 +4,7 @@
 local M = {}
 
 ---Setup and configure lspeek with user options
----@param opts? LspeekConfig User-provided configuration options
+---@param opts? lspeek.Config User-provided configuration options
 ---@return nil
 M.setup = function(opts)
   require("lspeek.config").setup(opts)
