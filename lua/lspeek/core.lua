@@ -43,7 +43,7 @@ function M.peek_definition()
       col = range.start.character
     end
 
-    local ok, preview = pcall(window.create_preview, target_buf, filename, row, col)
+    local ok, preview = pcall(window.create_preview_floating_window, target_buf, filename, row, col)
 
     if not ok or not preview then
       return

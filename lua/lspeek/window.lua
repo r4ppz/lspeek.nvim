@@ -8,7 +8,8 @@ Preview.__index = Preview
 -- List of previews
 local stack = {}
 
-local function buffer_in_previews(buf)
+--- Checks if a given buffer is present in the preview stack.
+local function is_buffer_in_previews(buf)
   for _, preview in ipairs(stack) do
     if preview.buf == buf then
       return true
@@ -17,7 +18,8 @@ local function buffer_in_previews(buf)
   return false
 end
 
-local function preview_by_win(win)
+--- Retrieves the preview entry associated with a given window.
+local function get_preview_by_win(win)
   for _, preview in ipairs(stack) do
     if preview.win == win then
       return preview
@@ -43,7 +45,7 @@ function Preview:close()
     self._winclosed_au = nil
   end
 
-  if not buffer_in_previews(self.buf) and vim.api.nvim_buf_is_valid(self.buf) then
+  if not is_buffer_in_previews(self.buf) and vim.api.nvim_buf_is_valid(self.buf) then
     vim.bo[self.buf].modifiable = true
     pcall(vim.keymap.del, "n", config.keymaps.close, { buffer = self.buf })
     pcall(vim.keymap.del, "n", config.keymaps.vsplit, { buffer = self.buf })
@@ -59,7 +61,7 @@ function Preview:close()
   end
 end
 
-local function smart_window_opts(width, height)
+local function smart_win_opts(width, height)
   local ui = vim.api.nvim_list_uis()[1]
   local screen_w, screen_h = ui.width, ui.height
   local cursor = vim.fn.screenpos(0, vim.fn.line("."), vim.fn.col("."))
@@ -89,51 +91,72 @@ local function set_preview_keymaps(buf)
   local map_opts = { buffer = buf, silent = true, nowait = true }
 
   vim.keymap.set("n", config.keymaps.close, function()
-    local preview = preview_by_win(vim.api.nvim_get_current_win())
-    if preview then
-      preview:close()
-    end
-  end, map_opts)
-
-  vim.keymap.set("n", config.keymaps.vsplit, function()
-    local preview = preview_by_win(vim.api.nvim_get_current_win())
-    if preview then
-      preview:close()
-      vim.cmd("vsplit")
-      vim.api.nvim_set_current_buf(preview.buf)
-    end
-  end, map_opts)
-
-  vim.keymap.set("n", config.keymaps.split, function()
-    local preview = preview_by_win(vim.api.nvim_get_current_win())
-    if preview then
-      preview:close()
-      vim.cmd("split")
-      vim.api.nvim_set_current_buf(preview.buf)
-    end
-  end, map_opts)
-
-  vim.keymap.set("n", config.keymaps.enter, function()
-    local preview = preview_by_win(vim.api.nvim_get_current_win())
+    local preview = get_preview_by_win(vim.api.nvim_get_current_win())
     if not preview then
       return
     end
 
-    local target_path = vim.api.nvim_buf_get_name(preview.buf)
-    local current_path = vim.api.nvim_buf_get_name(0)
-
     preview:close()
+  end, map_opts)
 
+  vim.keymap.set("n", config.keymaps.vsplit, function()
+    local preview = get_preview_by_win(vim.api.nvim_get_current_win())
+    if not preview then
+      return
+    end
+
+    -- Snapshot data we need from the preview before closing everything
+    local target_buf = preview.buf
+    local target_pos = preview.target_pos
+
+    -- Close all previews, then open the target in a vertical split
+    M.close_all_previews()
+
+    vim.cmd("vsplit")
+    vim.api.nvim_set_current_buf(target_buf)
+    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+  end, map_opts)
+
+  vim.keymap.set("n", config.keymaps.split, function()
+    local preview = get_preview_by_win(vim.api.nvim_get_current_win())
+    if not preview then
+      return
+    end
+
+    local target_buf = preview.buf
+    local target_pos = preview.target_pos
+
+    M.close_all_previews()
+
+    vim.cmd("split")
+    vim.api.nvim_set_current_buf(target_buf)
+    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+  end, map_opts)
+
+  vim.keymap.set("n", config.keymaps.enter, function()
+    local preview = get_preview_by_win(vim.api.nvim_get_current_win())
+    if not preview then
+      return
+    end
+
+    -- Snapshot path/pos before closing previews
+    local target_path = vim.api.nvim_buf_get_name(preview.buf)
+    local target_pos = preview.target_pos
+
+    -- Close all previews first
+    M.close_all_previews()
+
+    local current_path = vim.api.nvim_buf_get_name(0)
     if current_path == target_path then
-      vim.api.nvim_win_set_cursor(0, preview.target_pos)
+      pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
     else
       vim.cmd("edit " .. vim.fn.fnameescape(target_path))
-      vim.api.nvim_win_set_cursor(0, preview.target_pos)
+      pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
     end
   end, map_opts)
 end
 
-local function set_preview_win_options(win, buf)
+local function set_preview_win_opts(win, buf)
   vim.api.nvim_set_option_value("winbar", "", { win = win })
   vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
   vim.bo[buf].modifiable = false
@@ -144,7 +167,7 @@ local function register_winclosed_autocmd(win, instance)
     pattern = tostring(win),
     callback = function()
       pcall(function()
-        local preview = preview_by_win(tonumber(vim.fn.expand("<afile>")))
+        local preview = get_preview_by_win(tonumber(vim.fn.expand("<afile>")))
         if preview then
           preview:close()
         end
@@ -163,7 +186,7 @@ end
 --- @param target_row integer
 --- @param target_col integer
 --- @return table|nil
-function M.create_preview(buf, filename, target_row, target_col)
+function M.create_preview_floating_window(buf, filename, target_row, target_col)
   local limit = config.stack_limit or 0
   if limit > 0 and #stack >= limit then
     vim.notify("lspeek: " .. "You're doing too much", vim.log.levels.ERROR)
@@ -172,12 +195,11 @@ function M.create_preview(buf, filename, target_row, target_col)
 
   local instance = {
     buf = buf,
-    filename = filename,
     target_pos = { target_row, target_col },
   }
   setmetatable(instance, Preview)
 
-  local smart = smart_window_opts(config.window.width, config.window.height)
+  local smart = smart_win_opts(config.window.width, config.window.height)
   local win_config = {
     relative = "cursor",
     anchor = smart.anchor,
@@ -192,12 +214,25 @@ function M.create_preview(buf, filename, target_row, target_col)
   }
 
   instance.win = vim.api.nvim_open_win(buf, true, win_config)
-  set_preview_win_options(instance.win, buf)
+  set_preview_win_opts(instance.win, buf)
   set_preview_keymaps(buf)
   register_winclosed_autocmd(instance.win, instance)
 
   table.insert(stack, instance)
   return instance
+end
+
+--- Close all active preview windows and clear the stack.
+function M.close_all_previews()
+  while #stack > 0 do
+    local preview = stack[#stack]
+    if not preview then
+      break
+    end
+    pcall(function()
+      preview:close()
+    end)
+  end
 end
 
 return M
