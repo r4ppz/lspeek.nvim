@@ -45,7 +45,6 @@ function M.peek_definition()
 
     local ok, preview = pcall(window.create_preview, target_buf, filename, row, col)
 
-    -- If create_preview failed or returned nil
     if not ok or not preview then
       return
     end
