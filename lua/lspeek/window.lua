@@ -1,4 +1,5 @@
 local config = require("lspeek.config").options
+local util = require("lspeek.util")
 
 local M = {}
 
@@ -84,6 +85,7 @@ function Preview:close()
     pcall(vim.keymap.del, "n", config.keymaps.enter, { buffer = self.target.buf })
   end
 
+  -- Refocus on top of the stack
   if #stack > 0 then
     local top = stack[#stack]
     if top.win and vim.api.nvim_win_is_valid(top.win) then
@@ -123,7 +125,7 @@ end
 --- @param preview lspeek.Preview
 local function perform_jump_operation(operation, preview)
   local target_buf = preview.target.buf
-  local target_pos = M.lsp_pos_to_vim_cursor(preview.target.pos)
+  local target_pos = util.lsp_pos_to_vim_cursor(preview.target.pos)
   local target_path = vim.api.nvim_buf_get_name(preview.target.buf)
 
   -- Close all previews first
@@ -191,21 +193,16 @@ local function set_preview_win_opts(win, target_buf)
 end
 
 local function register_winclosed_autocmd(win, instance)
-  local ok, au_id = pcall(vim.api.nvim_create_autocmd, "WinClosed", {
+  instance._winclosed_au = vim.api.nvim_create_autocmd("WinClosed", {
     pattern = tostring(win),
-    callback = function()
-      pcall(function()
-        local preview = get_preview_by_win(tonumber(vim.fn.expand("<afile>")))
-        if preview then
-          preview:close()
-        end
-      end)
-    end,
     once = true,
+    callback = function()
+      local preview = get_preview_by_win(tonumber(vim.fn.expand("<afile>")))
+      if preview then
+        preview:close()
+      end
+    end,
   })
-  if ok then
-    instance._winclosed_au = au_id
-  end
 end
 
 --- Create a floating preview window for a buffer.
@@ -260,38 +257,6 @@ function M.close_all_previews()
       preview:close()
     end)
   end
-end
-
---- Converts LSP position format to Vim cursor position format
---- LSP: 0-indexed line and character
---- Vim: 1-indexed line and 0-indexed character
---- @param pos lspeek.Preview.Pos LSP position
---- @return { [1]: integer, [2]: integer } Vim cursor position [row, col]
-function M.lsp_pos_to_vim_cursor(pos)
-  return { pos.line + 1, pos.character }
-end
-
---- Builds a Target object from LSP location response
---- @param location lsp.Location|lsp.LocationLink
---- @param target_buf integer Buffer number of target
---- @param target_fname string Filesystem path to target file
---- @return lsp.Preview.Target
-function M.build_target_from_location(location, target_buf, target_fname)
-  local range = location.range or location.targetSelectionRange
-  local pos = { line = 0, character = 0 }
-
-  if range then
-    pos.line = range.start.line
-    pos.character = range.start.character
-  end
-
-  return {
-    buf = target_buf,
-    pos = pos,
-    filename = vim.fn.fnamemodify(target_fname, ":t"),
-    full_path = target_fname,
-    uri = location.uri or location.targetUri,
-  }
 end
 
 return M

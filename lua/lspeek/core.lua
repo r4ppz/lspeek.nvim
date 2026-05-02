@@ -1,4 +1,5 @@
 local window = require("lspeek.window")
+local util = require("lspeek.util")
 
 local M = {}
 
@@ -44,14 +45,14 @@ function M.peek_definition()
     }
 
     ---@type lsp.Preview.Target
-    local target = window.build_target_from_location(location, target_buf, target_fname)
+    local target = util.build_target_from_location(location, target_buf, target_fname)
 
     -- Create the preview with source and target objects
     local preview = window.create_preview_floating_window(source, target)
 
     -- Set cursor to target position
     if preview and preview.win and vim.api.nvim_win_is_valid(preview.win) then
-      local cursor_pos = window.lsp_pos_to_vim_cursor(target.pos)
+      local cursor_pos = util.lsp_pos_to_vim_cursor(target.pos)
       pcall(vim.api.nvim_win_set_cursor, preview.win, cursor_pos)
     end
   end
