@@ -24,11 +24,11 @@ local M = {}
 
 --- Preview instance type used by lspeek.window
 ---@class lspeek.Preview
----@field win integer window id for the floating preview
 ---@field source lspeek.Preview.Source source context where peek was initiated
 ---@field target lsp.Preview.Target target definition location
----@field _winclosed_au integer|nil autocmd id for WinClosed cleanup (if created)
----@field close fun(self) method to close this preview
+---@field win? integer window id for the floating preview
+---@field _winclosed_au? integer autocmd id for WinClosed cleanup (if created)
+---@field close? fun(self) method to close this preview
 local Preview = {}
 Preview.__index = Preview
 
@@ -219,6 +219,7 @@ function M.create_preview_floating_window(source, target)
     return nil
   end
 
+  ---@type lspeek.Preview
   local instance = {
     source = source,
     target = target,
