@@ -60,6 +60,19 @@ local function get_preview_by_win(win)
   return nil
 end
 
+--- Close all active preview windows and clear the stack.
+local function close_all_previews()
+  while #stack > 0 do
+    local preview = stack[#stack]
+    if not preview then
+      break
+    end
+    pcall(function()
+      preview:close()
+    end)
+  end
+end
+
 function Preview:close()
   if self.win and vim.api.nvim_win_is_valid(self.win) then
     pcall(vim.api.nvim_win_close, self.win, true)
@@ -129,7 +142,7 @@ local function perform_jump_operation(operation, preview)
   local target_path = vim.api.nvim_buf_get_name(preview.target.buf)
 
   -- Close all previews first
-  M.close_all_previews()
+  close_all_previews()
 
   if operation == "vsplit" then
     vim.cmd("vsplit")
@@ -246,17 +259,27 @@ function M.create_preview_floating_window(source, target)
   return instance
 end
 
---- Close all active preview windows and clear the stack.
-function M.close_all_previews()
-  while #stack > 0 do
-    local preview = stack[#stack]
-    if not preview then
-      break
-    end
-    pcall(function()
-      preview:close()
-    end)
+--- Builds a Target object from LSP location response
+--- @param location lsp.Location|lsp.LocationLink
+--- @param target_buf integer Buffer number of target
+--- @param target_fname string Filesystem path to target file
+--- @return lsp.Preview.Target
+function M.build_target_from_location(location, target_buf, target_fname)
+  local range = location.range or location.targetSelectionRange
+  local pos = { line = 0, character = 0 }
+
+  if range then
+    pos.line = range.start.line
+    pos.character = range.start.character
   end
+
+  return {
+    buf = target_buf,
+    pos = pos,
+    filename = vim.fn.fnamemodify(target_fname, ":t"),
+    full_path = target_fname,
+    uri = location.uri or location.targetUri,
+  }
 end
 
 return M

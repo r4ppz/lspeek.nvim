@@ -45,7 +45,7 @@ function M.peek_definition()
     }
 
     ---@type lsp.Preview.Target
-    local target = util.build_target_from_location(location, target_buf, target_fname)
+    local target = window.build_target_from_location(location, target_buf, target_fname)
 
     -- Create the preview with source and target objects
     local preview = window.create_preview_floating_window(source, target)
