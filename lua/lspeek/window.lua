@@ -2,11 +2,31 @@ local config = require("lspeek.config").options
 
 local M = {}
 
+--- Position in LSP format (0-indexed)
+---@class lspeek.Preview.Pos
+---@field line integer 0-indexed line number
+---@field character integer 0-indexed character offset (UTF-16)
+
+--- Source context where peek_definition was initiated
+---@class lspeek.Preview.Source
+---@field win integer Source window ID when peek was initiated
+---@field buf integer Source buffer number
+---@field pos lspeek.Preview.Pos Source cursor position in LSP format
+---@field uri string URI of source file
+
+--- Target definition location
+---@class lsp.Preview.Target
+---@field buf integer Target buffer number
+---@field pos lspeek.Preview.Pos Target cursor position in LSP format
+---@field filename string Display filename (basename from URI)
+---@field full_path string Full filesystem path to target file
+---@field uri string URI of target file
+
 --- Preview instance type used by lspeek.window
 ---@class lspeek.Preview
----@field buf integer buffer number being previewed
----@field win number|nil window id for the floating preview (may be nil until created)
----@field target_pos { row: integer, col: integer } named fields for target cursor position
+---@field win integer window id for the floating preview
+---@field source lspeek.Preview.Source source context where peek was initiated
+---@field target lsp.Preview.Target target definition location
 ---@field _winclosed_au integer|nil autocmd id for WinClosed cleanup (if created)
 ---@field close fun(self) method to close this preview
 local Preview = {}
@@ -20,7 +40,7 @@ local stack = {}
 --- @return boolean
 local function is_buffer_in_previews(buf)
   for _, preview in ipairs(stack) do
-    if preview.buf == buf then
+    if preview.target.buf == buf then
       return true
     end
   end
@@ -56,12 +76,12 @@ function Preview:close()
     self._winclosed_au = nil
   end
 
-  if not is_buffer_in_previews(self.buf) and vim.api.nvim_buf_is_valid(self.buf) then
-    vim.bo[self.buf].modifiable = true
-    pcall(vim.keymap.del, "n", config.keymaps.close, { buffer = self.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.vsplit, { buffer = self.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.split, { buffer = self.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.enter, { buffer = self.buf })
+  if not is_buffer_in_previews(self.target.buf) and vim.api.nvim_buf_is_valid(self.target.buf) then
+    vim.bo[self.target.buf].modifiable = true
+    pcall(vim.keymap.del, "n", config.keymaps.close, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.keymaps.vsplit, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.keymaps.split, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.keymaps.enter, { buffer = self.target.buf })
   end
 
   if #stack > 0 then
@@ -98,6 +118,36 @@ local function smart_win_opts(width, height)
   return { row = row, col = col, anchor = anchor }
 end
 
+--- Helper to perform jump operation with target buffer
+--- @param operation string "vsplit", "split", or "edit"
+--- @param preview lspeek.Preview
+local function perform_jump_operation(operation, preview)
+  local target_buf = preview.target.buf
+  local target_pos = M.lsp_pos_to_vim_cursor(preview.target.pos)
+  local target_path = vim.api.nvim_buf_get_name(preview.target.buf)
+
+  -- Close all previews first
+  M.close_all_previews()
+
+  if operation == "vsplit" then
+    vim.cmd("vsplit")
+    vim.api.nvim_set_current_buf(target_buf)
+    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+  elseif operation == "split" then
+    vim.cmd("split")
+    vim.api.nvim_set_current_buf(target_buf)
+    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+  elseif operation == "edit" then
+    local current_path = vim.api.nvim_buf_get_name(0)
+    if current_path == target_path then
+      pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+    else
+      vim.cmd("edit " .. vim.fn.fnameescape(target_path))
+      pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+    end
+  end
+end
+
 local function set_preview_keymaps(buf)
   local map_opts = { buffer = buf, silent = true, nowait = true }
 
@@ -106,7 +156,6 @@ local function set_preview_keymaps(buf)
     if not preview then
       return
     end
-
     preview:close()
   end, map_opts)
 
@@ -115,18 +164,7 @@ local function set_preview_keymaps(buf)
     if not preview then
       return
     end
-
-    -- Snapshot data we need from the preview before closing everything
-    local target_buf = preview.buf
-    local tp = preview.target_pos
-    local target_pos = { tp.row, tp.col }
-
-    -- Close all previews, then open the target in a vertical split
-    M.close_all_previews()
-
-    vim.cmd("vsplit")
-    vim.api.nvim_set_current_buf(target_buf)
-    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+    perform_jump_operation("vsplit", preview)
   end, map_opts)
 
   vim.keymap.set("n", config.keymaps.split, function()
@@ -134,16 +172,7 @@ local function set_preview_keymaps(buf)
     if not preview then
       return
     end
-
-    local target_buf = preview.buf
-    local tp = preview.target_pos
-    local target_pos = { tp.row, tp.col }
-
-    M.close_all_previews()
-
-    vim.cmd("split")
-    vim.api.nvim_set_current_buf(target_buf)
-    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+    perform_jump_operation("split", preview)
   end, map_opts)
 
   vim.keymap.set("n", config.keymaps.enter, function()
@@ -151,29 +180,14 @@ local function set_preview_keymaps(buf)
     if not preview then
       return
     end
-
-    -- Snapshot path/pos before closing previews
-    local target_path = vim.api.nvim_buf_get_name(preview.buf)
-    local tp = preview.target_pos
-    local target_pos = { tp.row, tp.col }
-
-    -- Close all previews first
-    M.close_all_previews()
-
-    local current_path = vim.api.nvim_buf_get_name(0)
-    if current_path == target_path then
-      pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
-    else
-      vim.cmd("edit " .. vim.fn.fnameescape(target_path))
-      pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
-    end
+    perform_jump_operation("edit", preview)
   end, map_opts)
 end
 
-local function set_preview_win_opts(win, buf)
+local function set_preview_win_opts(win, target_buf)
   vim.api.nvim_set_option_value("winbar", "", { win = win })
   vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
-  vim.bo[buf].modifiable = false
+  vim.bo[target_buf].modifiable = false
 end
 
 local function register_winclosed_autocmd(win, instance)
@@ -195,12 +209,10 @@ local function register_winclosed_autocmd(win, instance)
 end
 
 --- Create a floating preview window for a buffer.
---- @param buf integer
---- @param filename string
---- @param target_row integer
---- @param target_col integer
+--- @param source lspeek.Preview.Source Source context where peek was initiated
+--- @param target lsp.Preview.Target Target definition location
 --- @return lspeek.Preview|nil
-function M.create_preview_floating_window(buf, filename, target_row, target_col)
+function M.create_preview_floating_window(source, target)
   local limit = config.stack_limit or 0
   if limit > 0 and #stack >= limit then
     vim.notify(("lspeek: preview limit (%d) reached"):format(limit), vim.log.levels.WARN)
@@ -208,8 +220,8 @@ function M.create_preview_floating_window(buf, filename, target_row, target_col)
   end
 
   local instance = {
-    buf = buf,
-    target_pos = { row = target_row, col = target_col },
+    source = source,
+    target = target,
   }
   setmetatable(instance, Preview)
 
@@ -222,14 +234,14 @@ function M.create_preview_floating_window(buf, filename, target_row, target_col)
     width = config.window.width,
     height = config.window.height,
     border = config.window.border,
-    title = filename,
+    title = target.filename,
     title_pos = config.window.title_pos,
     style = "minimal",
   }
 
-  instance.win = vim.api.nvim_open_win(buf, true, win_config)
-  set_preview_win_opts(instance.win, buf)
-  set_preview_keymaps(buf)
+  instance.win = vim.api.nvim_open_win(target.buf, true, win_config)
+  set_preview_win_opts(instance.win, target.buf)
+  set_preview_keymaps(target.buf)
   register_winclosed_autocmd(instance.win, instance)
 
   table.insert(stack, instance)
@@ -247,6 +259,38 @@ function M.close_all_previews()
       preview:close()
     end)
   end
+end
+
+--- Converts LSP position format to Vim cursor position format
+--- LSP: 0-indexed line and character
+--- Vim: 1-indexed line and 0-indexed character
+--- @param pos lspeek.Preview.Pos LSP position
+--- @return { [1]: integer, [2]: integer } Vim cursor position [row, col]
+function M.lsp_pos_to_vim_cursor(pos)
+  return { pos.line + 1, pos.character }
+end
+
+--- Builds a Target object from LSP location response
+--- @param location lsp.Location|lsp.LocationLink
+--- @param target_buf integer Buffer number of target
+--- @param target_fname string Filesystem path to target file
+--- @return lsp.Preview.Target
+function M.build_target_from_location(location, target_buf, target_fname)
+  local range = location.range or location.targetSelectionRange
+  local pos = { line = 0, character = 0 }
+
+  if range then
+    pos.line = range.start.line
+    pos.character = range.start.character
+  end
+
+  return {
+    buf = target_buf,
+    pos = pos,
+    filename = vim.fn.fnamemodify(target_fname, ":t"),
+    full_path = target_fname,
+    uri = location.uri or location.targetUri,
+  }
 end
 
 return M
