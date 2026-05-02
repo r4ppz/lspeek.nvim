@@ -4,8 +4,6 @@ A small Neovim plugin to preview LSP definitions in a read-only floating window.
 
 [video](https://github.com/user-attachments/assets/2479b79e-c2ac-4fdf-a2af-065095ed9eb8)
 
-## Installation
-
 ```lua
 -- Plugin spec
 {
@@ -25,6 +23,16 @@ A small Neovim plugin to preview LSP definitions in a read-only floating window.
       split = "s",
       vsplit = "v",
       enter = "<CR>",
+    },
+  },
+
+  keys = {
+    {
+      "gD",
+      function()
+        require("lspeek").peek_definition()
+      end,
+      desc = "Peek Definition (lspeek)",
     },
   },
 },
