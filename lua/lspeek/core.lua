@@ -17,6 +17,9 @@ function M.peek_definition()
       return
     end
 
+    -- Save to jumplist
+    vim.cmd("normal! m'")
+
     -- Get only the first def if its a list
     local location = vim.islist(result) and result[1] or result
     local uri = location.uri or location.targetUri
