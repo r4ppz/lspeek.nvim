@@ -7,42 +7,6 @@ local M = {}
 function M.peek_definition()
   local params = vim.lsp.util.make_position_params(0, "utf-16")
 
-  -- Helper: compare LSP positions
-  local function pos_lt(a, b)
-    if a.line < b.line then
-      return true
-    end
-    if a.line > b.line then
-      return false
-    end
-    return a.character < b.character
-  end
-
-  local function pos_lte(a, b)
-    return pos_lt(a, b) or (a.line == b.line and a.character == b.character)
-  end
-
-  -- Helper: determine if a returned location (Location or LocationLink)
-  -- contains the search position from params. Uses uri and range fields
-  -- (or targetUri/targetSelectionRange for LocationLink).
-  local function location_contains_position(location, search_uri, search_pos)
-    local uri = location.uri or location.targetUri
-    local range = location.range or location.targetSelectionRange
-    if not uri or not range then
-      return false
-    end
-    if uri ~= search_uri then
-      return false
-    end
-    local startp = range.start
-    local endp = range["end"]
-    if not startp or not endp then
-      return false
-    end
-    -- return start <= pos < end
-    return pos_lte(startp, search_pos) and pos_lt(search_pos, endp)
-  end
-
   local callback = function(err, result)
     if err then
       vim.notify("lspeek: " .. err.message, vim.log.levels.ERROR)
@@ -54,7 +18,6 @@ function M.peek_definition()
       return
     end
 
-    -- Do not def when its the same location
     do
       local search_pos = params.position
       local search_uri = params.textDocument.uri
@@ -62,7 +25,7 @@ function M.peek_definition()
       if vim.islist(result) then
         local filtered = {}
         for _, loc in ipairs(result) do
-          if not location_contains_position(loc, search_uri, search_pos) then
+          if not util.location_contains_position(loc, search_uri, search_pos) then
             table.insert(filtered, loc)
           end
         end
@@ -72,7 +35,7 @@ function M.peek_definition()
         end
         result = filtered
       else
-        if location_contains_position(result, search_uri, search_pos) then
+        if util.location_contains_position(result, search_uri, search_pos) then
           vim.notify("lspeek: No other definition found", vim.log.levels.WARN)
           return
         end
