@@ -37,10 +37,9 @@ A small Neovim plugin to preview LSP definitions in a read-only floating window.
 },
 ```
 
-_Behavior:_
+_note:_
 
 - Does not open preview window if cursor is already at the definition.
-- Preserves jumplist entries.
 - Limits the number of stack preview windows.
 - Preview window is read-only.
 - To edit the file, open it in a split or a new buffer.
