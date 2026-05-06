@@ -2,7 +2,6 @@
 ---@field width integer Window width in characters
 ---@field height integer Window height in lines
 ---@field border string|string[] Window border style (e.g., "single", "double", "rounded")
----@field title_pos? string Position of the title ("left", "center", "right")
 
 ---@class lspeek.Config.Keymap
 ---@field close string Keymap to close the preview window
@@ -23,7 +22,6 @@ M.defaults = {
     width = 70,
     height = 15,
     border = "single",
-    title_pos = "center",
   },
 
   stack_limit = 5,

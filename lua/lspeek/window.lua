@@ -239,6 +239,8 @@ function M.create_preview_floating_window(source, target)
   local smart = smart_win_opts(config.window.width, config.window.height)
   local win_config = {
     relative = "cursor",
+    title_pos = "center",
+    style = "minimal",
     anchor = smart.anchor,
     row = smart.row,
     col = smart.col,
@@ -246,8 +248,6 @@ function M.create_preview_floating_window(source, target)
     height = config.window.height,
     border = config.window.border,
     title = target.filename,
-    title_pos = config.window.title_pos,
-    style = "minimal",
   }
 
   instance.win = vim.api.nvim_open_win(target.buf, true, win_config)

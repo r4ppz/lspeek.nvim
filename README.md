@@ -2,7 +2,11 @@
 
 A small Neovim plugin to preview LSP definitions in a read-only floating window.
 
-[video](https://github.com/user-attachments/assets/2479b79e-c2ac-4fdf-a2af-065095ed9eb8)
+_note:_
+
+- Does not open preview if already at definition
+- Preview window is read-only
+- Limit number of stacked preview windows
 
 ```lua
 -- Plugin spec
@@ -13,7 +17,6 @@ A small Neovim plugin to preview LSP definitions in a read-only floating window.
       width = 70,
       height = 15,
       border = "single",
-      title_pos = "center",
     },
 
     stack_limit = 7,
