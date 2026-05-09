@@ -47,9 +47,13 @@ function M.peek_definition()
 
     -- Get only the first def if its a list
     local location = vim.islist(result) and result[1] or result
-    local uri = location.uri or location.targetUri
-    local target_buf = vim.uri_to_bufnr(uri)
 
+    local uri = location.uri or location.targetUri
+    if not uri:match("^%w+://") then
+      uri = vim.uri_from_fname(uri)
+    end
+
+    local target_buf = vim.uri_to_bufnr(uri)
     local target_fname = vim.uri_to_fname(uri)
 
     if not vim.api.nvim_buf_is_loaded(target_buf) then
