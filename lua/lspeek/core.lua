@@ -37,7 +37,18 @@ function M.peek_definition()
       return
     end
 
-    local locations = util.filter_other_locations(result, params.textDocument.uri, params.position)
+    -- Check if we're in a preview window and use that context for filtering
+    local current_preview = window.get_current_preview()
+    local search_uri = params.textDocument.uri
+    ---@type table
+    local search_pos = params.position
+
+    if current_preview then
+      search_uri = current_preview.target.uri
+      search_pos = current_preview.target.pos
+    end
+
+    local locations = util.filter_other_locations(result, search_uri, search_pos)
 
     if #locations == 0 then
       vim.notify("Already at definition", vim.log.levels.WARN)

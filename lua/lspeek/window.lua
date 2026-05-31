@@ -294,4 +294,10 @@ function M.get_source()
   }
 end
 
+--- Get the preview instance for the current window (if any)
+--- @return lspeek.Preview|nil
+function M.get_current_preview()
+  return get_preview_by_win(vim.api.nvim_get_current_win())
+end
+
 return M
