@@ -282,4 +282,16 @@ function M.build_target_from_location(location, target_buf, target_fname)
   }
 end
 
+function M.get_source()
+  return {
+    win = 0,
+    buf = 0,
+    pos = {
+      line = vim.fn.line(".") - 1,
+      character = vim.fn.col(".") - 1,
+    },
+    uri = vim.uri_from_fname(vim.api.nvim_buf_get_name(0)),
+  }
+end
+
 return M

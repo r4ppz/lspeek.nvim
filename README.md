@@ -5,7 +5,7 @@ A small Neovim plugin to preview LSP definitions in a read-only floating window.
 [preview vid](https://github.com/user-attachments/assets/39c47fc7-fc75-46ec-b571-c4af45f818d2)
 
 ```lua
--- note:
+-- Note:
 -- Does not open preview window if cursor is already at the definition.
 
 -- Plugin spec:
