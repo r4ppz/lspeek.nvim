@@ -16,4 +16,10 @@ M.peek_definition = function()
   require("lspeek.core").peek_definition()
 end
 
+---Preview the type definition of the symbol under the cursor in a floating window
+---@return nil
+M.peek_type_definition = function()
+  require("lspeek.core").peek_type_definition()
+end
+
 return M

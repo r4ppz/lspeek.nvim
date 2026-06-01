@@ -1,6 +1,6 @@
 # lspeek.nvim
 
-A small Neovim plugin to preview LSP definitions in a read-only floating window.
+A small Neovim plugin to preview LSP definitions and type definitions in a read-only floating window.
 
 [preview vid](https://github.com/user-attachments/assets/39c47fc7-fc75-46ec-b571-c4af45f818d2)
 
@@ -29,13 +29,20 @@ A small Neovim plugin to preview LSP definitions in a read-only floating window.
   },
 
   keys = {
+    -- No preview window if already at definition
     {
       "gD",
       function()
-        -- No preview window if already at definition
         require("lspeek").peek_definition()
       end,
       desc = "Peek Definition (lspeek)",
+    },
+    {
+      "gT",
+      function()
+        require("lspeek").peek_type_definition()
+      end,
+      desc = "Peek Type Definition (lspeek)",
     },
   },
 }

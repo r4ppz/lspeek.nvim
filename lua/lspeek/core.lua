@@ -23,17 +23,17 @@ local function open_preview(location)
   end
 end
 
-function M.peek_definition()
+local function peek_request(method, label)
   local params = vim.lsp.util.make_position_params(0, "utf-16")
 
-  vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)
+  vim.lsp.buf_request(0, method, params, function(err, result)
     if err then
       vim.notify(err.message, vim.log.levels.ERROR)
       return
     end
 
     if not result or vim.tbl_isempty(result) then
-      vim.notify("No definition found", vim.log.levels.WARN)
+      vim.notify(("No %s found"):format(label), vim.log.levels.WARN)
       return
     end
 
@@ -51,13 +51,21 @@ function M.peek_definition()
     local locations = util.filter_other_locations(result, search_uri, search_pos)
 
     if #locations == 0 then
-      vim.notify("Already at definition", vim.log.levels.WARN)
+      vim.notify(("Already at %s"):format(label), vim.log.levels.WARN)
       return
     end
 
     vim.cmd("normal! m'")
     open_preview(locations[1])
   end)
+end
+
+function M.peek_definition()
+  peek_request("textDocument/definition", "definition")
+end
+
+function M.peek_type_definition()
+  peek_request("textDocument/typeDefinition", "type definition")
 end
 
 return M
