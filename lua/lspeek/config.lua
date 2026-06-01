@@ -13,6 +13,7 @@
 ---@field window? lspeek.Config.Window Window configuration options
 ---@field keymaps? lspeek.Config.Keymap Keymap configuration
 ---@field stack_limit? integer Maximum number of nested preview windows to keep on the stack
+---@field select_first? boolean Skip picker and open first result directly
 
 local M = {}
 
@@ -25,6 +26,8 @@ M.defaults = {
   },
 
   stack_limit = 5,
+
+  select_first = false,
 
   keymaps = {
     close = "q",

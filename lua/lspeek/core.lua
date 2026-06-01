@@ -1,3 +1,4 @@
+local config = require("lspeek.config").options
 local window = require("lspeek.window")
 local util = require("lspeek.util")
 
@@ -57,7 +58,7 @@ local function peek_request(method, label)
 
     vim.cmd("normal! m'")
 
-    if #locations == 1 then
+    if #locations == 1 or config.select_first then
       open_preview(locations[1])
     else
       vim.ui.select(locations, {
