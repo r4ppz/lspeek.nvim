@@ -56,7 +56,25 @@ local function peek_request(method, label)
     end
 
     vim.cmd("normal! m'")
-    open_preview(locations[1])
+
+    if #locations == 1 then
+      open_preview(locations[1])
+    else
+      vim.ui.select(locations, {
+        prompt = "Select " .. label .. ":",
+        format_item = function(loc)
+          local uri = loc.uri or loc.targetUri
+          local fname = vim.uri_to_fname(uri)
+          local range = loc.range or loc.targetSelectionRange
+          local line = range and range.start.line + 1 or 0
+          return vim.fn.fnamemodify(fname, ":t") .. ":" .. line
+        end,
+      }, function(choice)
+        if choice then
+          open_preview(choice)
+        end
+      end)
+    end
   end)
 end
 
