@@ -52,13 +52,13 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 }
 ```
 
----
-
 - You can also use `:LSPeekDef` and `:LSPeekTypeDef` if you prefer commands over the Lua API.
 - The preview window is positioned relative to the _cursor_ because I like it that way :)
 - Before opening a preview, it stores the current cursor position in the buffer-local `'` mark.
 - Closing the preview/split returns you to your original cursor position.
 - Won't open a preview if already at the definition - seems obvious :0
 - `vim.ui.select` is ugly if you don't have picker plugin :( so be sure to use one :)
+
+---
 
 _Inspired by [lspsaga's peek definition](https://nvimdev.github.io/lspsaga/definition/)._
