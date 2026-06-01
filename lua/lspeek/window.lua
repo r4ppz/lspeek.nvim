@@ -62,6 +62,7 @@ end
 
 --- Close all active preview windows and clear the stack.
 local function close_all_previews()
+  vim.opt.eventignore:append("WinClosed")
   while #stack > 0 do
     local preview = stack[#stack]
     if not preview then
@@ -71,11 +72,14 @@ local function close_all_previews()
       preview:close()
     end)
   end
+  vim.opt.eventignore:remove("WinClosed")
 end
 
 function Preview:close()
   if self.win and vim.api.nvim_win_is_valid(self.win) then
-    pcall(vim.api.nvim_win_close, self.win, true)
+    local win = self.win
+    self.win = nil
+    pcall(vim.api.nvim_win_close, win, true)
   end
 
   for i, preview in ipairs(stack) do
