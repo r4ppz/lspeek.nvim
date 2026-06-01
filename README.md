@@ -40,3 +40,5 @@ A small Neovim plugin to preview LSP definitions in a read-only floating window.
   },
 }
 ```
+
+_Inspired by [lspsaga’s peek definition](https://nvimdev.github.io/lspsaga/definition/)._
