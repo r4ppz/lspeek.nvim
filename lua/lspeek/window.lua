@@ -300,8 +300,8 @@ end
 
 function M.get_source()
   return {
-    win = 0,
-    buf = 0,
+    win = vim.api.nvim_get_current_win(),
+    buf = vim.api.nvim_get_current_buf(),
     pos = {
       line = vim.fn.line(".") - 1,
       character = vim.fn.col(".") - 1,
