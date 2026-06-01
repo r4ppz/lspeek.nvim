@@ -140,9 +140,11 @@ local function perform_jump_operation(operation, preview)
   local target_buf = preview.target.buf
   local target_pos = util.lsp_pos_to_vim_cursor(preview.target.pos)
   local target_path = vim.api.nvim_buf_get_name(preview.target.buf)
+  local source_pos = util.lsp_pos_to_vim_cursor(preview.source.pos)
 
-  -- Close all previews first
   close_all_previews()
+
+  local source_win = vim.api.nvim_get_current_win()
 
   if operation == "vsplit" then
     vim.cmd("vsplit")
@@ -160,6 +162,10 @@ local function perform_jump_operation(operation, preview)
       vim.cmd("edit " .. vim.fn.fnameescape(target_path))
       pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
     end
+  end
+
+  if operation ~= "edit" then
+    pcall(vim.api.nvim_win_set_cursor, source_win, source_pos)
   end
 end
 
