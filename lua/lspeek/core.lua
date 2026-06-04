@@ -24,7 +24,37 @@ local function open_preview(location)
   end
 end
 
+local function get_search_context(params)
+  local preview = window.get_current_preview()
+  if preview then
+    return preview.target.uri, preview.target.pos
+  end
+  return params.textDocument.uri, params.position
+end
+
+local function open_or_pick_location(locations, label)
+  vim.cmd("normal! m'")
+  if #locations == 1 or config.select_first then
+    open_preview(locations[1])
+  else
+    vim.ui.select(locations, {
+      prompt = "Select " .. label .. ":",
+      format_item = util.format_location,
+    }, function(choice)
+      if choice then
+        open_preview(choice)
+      end
+    end)
+  end
+end
+
 local function peek_request(method, label)
+  local clients = vim.lsp.get_clients({ bufnr = 0 })
+  if #clients == 0 then
+    vim.notify("No LSP client attached", vim.log.levels.WARN)
+    return
+  end
+
   local params = vim.lsp.util.make_position_params(0, "utf-16")
 
   vim.lsp.buf_request(0, method, params, function(err, result)
@@ -38,17 +68,7 @@ local function peek_request(method, label)
       return
     end
 
-    -- Check if we're in a preview window and use that context for filtering
-    local current_preview = window.get_current_preview()
-    local search_uri = params.textDocument.uri
-    ---@type table
-    local search_pos = params.position
-
-    if current_preview then
-      search_uri = current_preview.target.uri
-      search_pos = current_preview.target.pos
-    end
-
+    local search_uri, search_pos = get_search_context(params)
     local locations = util.filter_other_locations(result, search_uri, search_pos)
 
     if #locations == 0 then
@@ -56,26 +76,7 @@ local function peek_request(method, label)
       return
     end
 
-    vim.cmd("normal! m'")
-
-    if #locations == 1 or config.select_first then
-      open_preview(locations[1])
-    else
-      vim.ui.select(locations, {
-        prompt = "Select " .. label .. ":",
-        format_item = function(loc)
-          local uri = loc.uri or loc.targetUri
-          local fname = vim.uri_to_fname(uri)
-          local range = loc.range or loc.targetSelectionRange
-          local line = range and range.start.line + 1 or 0
-          return vim.fn.fnamemodify(fname, ":t") .. ":" .. line
-        end,
-      }, function(choice)
-        if choice then
-          open_preview(choice)
-        end
-      end)
-    end
+    open_or_pick_location(locations, label)
   end)
 end
 

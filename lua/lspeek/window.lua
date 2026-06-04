@@ -140,36 +140,32 @@ end
 --- Helper to perform jump operation with target buffer
 --- @param operation string "vsplit", "split", or "edit"
 --- @param preview lspeek.Preview
-local function perform_jump_operation(operation, preview)
-  local target_buf = preview.target.buf
+local function jump_to_target(operation, preview)
   local target_pos = util.lsp_pos_to_vim_cursor(preview.target.pos)
-  local target_path = vim.api.nvim_buf_get_name(preview.target.buf)
 
-  local source_pos = util.lsp_pos_to_vim_cursor(preview.source.pos)
-
-  close_all_previews()
-
-  local source_win = vim.api.nvim_get_current_win()
-
-  if operation == "vsplit" then
-    vim.cmd("vsplit")
-    vim.api.nvim_set_current_buf(target_buf)
-    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
-  elseif operation == "split" then
-    vim.cmd("split")
-    vim.api.nvim_set_current_buf(target_buf)
+  if operation == "vsplit" or operation == "split" then
+    vim.cmd(operation)
+    vim.api.nvim_set_current_buf(preview.target.buf)
     pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
   elseif operation == "edit" then
     local current_path = vim.api.nvim_buf_get_name(0)
-    if current_path == target_path then
+    if current_path == preview.target.full_path then
       pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
     else
-      vim.cmd("edit " .. vim.fn.fnameescape(target_path))
+      vim.cmd("edit " .. vim.fn.fnameescape(preview.target.full_path))
       pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
     end
   end
+end
+
+local function perform_jump_operation(operation, preview)
+  close_all_previews()
+
+  local source_win = vim.api.nvim_get_current_win()
+  jump_to_target(operation, preview)
 
   if operation ~= "edit" then
+    local source_pos = util.lsp_pos_to_vim_cursor(preview.source.pos)
     pcall(vim.api.nvim_win_set_cursor, source_win, source_pos)
   end
 end
@@ -221,7 +217,7 @@ local function register_winclosed_autocmd(win, instance)
     pattern = tostring(win),
     once = true,
     callback = function()
-      local preview = get_preview_by_win(tonumber(vim.fn.expand("<afile>")))
+      local preview = get_preview_by_win(win)
       if preview then
         preview:close()
       end

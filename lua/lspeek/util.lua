@@ -85,4 +85,15 @@ function M.ensure_loaded_buf(uri)
   return bufnr
 end
 
+--- Formats an LSP location for display in the quickpick.
+--- @param location table lsp.Location or lsp.LocationLink
+--- @return string
+function M.format_location(location)
+  local uri = location.uri or location.targetUri
+  local fname = vim.uri_to_fname(uri)
+  local range = location.range or location.targetSelectionRange
+  local line = range and range.start.line + 1 or 0
+  return vim.fn.fnamemodify(fname, ":t") .. ":" .. line
+end
+
 return M
