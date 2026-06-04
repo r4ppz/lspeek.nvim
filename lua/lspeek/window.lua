@@ -145,12 +145,7 @@ local function perform_jump_operation(operation, preview)
   local target_pos = util.lsp_pos_to_vim_cursor(preview.target.pos)
   local target_path = vim.api.nvim_buf_get_name(preview.target.buf)
 
-  local source_pos
-  if #stack > 1 then
-    source_pos = util.lsp_pos_to_vim_cursor(stack[1].source.pos)
-  else
-    source_pos = util.lsp_pos_to_vim_cursor(preview.source.pos)
-  end
+  local source_pos = util.lsp_pos_to_vim_cursor(preview.source.pos)
 
   close_all_previews()
 
