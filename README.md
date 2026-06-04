@@ -16,7 +16,7 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     },
 
     -- Limits the number of stack preview windows.
-    stack_limit = 7,
+    stack_limit = 5,
 
     -- LSP can return multiple definitions (e.g., overloaded functions).
     -- false = open vim.ui.select to pick one (default).
@@ -52,12 +52,12 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 }
 ```
 
+- Preview window is positioned relative to the _cursor_.
+- `s`/`v`/`<CR>` inside the preview opens the definition in a split, vsplit, or current buffer.
+- Opening a preview stores the cursor position in the buffer-local `'` mark.
+- Won't open a preview if already at the definition.
+- Uses `vim.ui.select` for multiple results — works out of the box, better with a picker plugin.
 - You can also use `:LSPeekDef` and `:LSPeekTypeDef` if you prefer commands over the Lua API.
-- The preview window is positioned relative to the _cursor_ because I like it that way :)
-- Before opening a preview, it stores the current cursor position in the buffer-local `'` mark.
-- Closing the preview/split returns you to your original cursor position.
-- Won't open a preview if already at the definition - seems obvious :0
-- `vim.ui.select` is ugly if you don't have picker plugin :( so be sure to use one :)
 
 ---
 
