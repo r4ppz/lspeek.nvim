@@ -2,7 +2,7 @@
 
 A small Neovim plugin to preview LSP definitions and type definitions in a read-only floating window.
 
-[preview vid](https://github.com/user-attachments/assets/39c47fc7-fc75-46ec-b571-c4af45f818d2)
+[preview vid](https://github.com/user-attachments/assets/eff58491-54f3-469c-b918-c52f59c60dd2)
 
 ```lua
 -- Plugin spec:
