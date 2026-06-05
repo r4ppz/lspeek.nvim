@@ -12,7 +12,7 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     window = {
       width = 70,
       height = 15,
-      border = "single",
+      border = "single", -- double | rounded | solid | shadow
     },
 
     -- Limits the number of stack preview windows.
@@ -24,7 +24,7 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     select_first = false,
 
     -- Preview window is read-only.
-    -- To edit the file, open it in a split or a new buffer.
+    -- To edit the file, open it in a split, new buffer or tab.
     keymaps = {
       close = "q",
       split = "s",
@@ -56,9 +56,21 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 - `s`/`v`/`t`/`<CR>` inside the preview window opens the definition in a split, vsplit, new tab, current/new buffer.
 - You can also use `:LSPeekDef` and `:LSPeekTypeDef` if you prefer commands over the Lua API.
 - Opening a preview stores the cursor position in the buffer-local `'` mark.
-- Uses `vim.ui.select` for multiple results, better with a picker plugin.
+- Aggregates results from multiple LSP clients (e.g., `ts_ls` + `cssls` + `emmet_ls` + etc).
+- Uses `vim.ui.select` for multiple results -- better with a picker plugin.
 - Won't open a preview if already at the definition.
 
 ---
 
-_Inspired by [lspsaga's peek definition](https://nvimdev.github.io/lspsaga/definition/)._
+> Found a bug? open an [issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
+
+---
+
+_This plugin was inspired by [lspsaga's peek definition](https://nvimdev.github.io/lspsaga/definition/)._
+
+I am trying to keep this minimal and lightweight so no fancy features for now.
+If you're looking for similar functionality with many more features, check out these plugins:
+
+- [glance.nvim](https://github.com/DNLHC/glance.nvim)
+- [goto-preview](https://github.com/rmagatti/goto-preview)
+- [lspsaga](https://github.com/nvimdev/lspsaga.nvim)

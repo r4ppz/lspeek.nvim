@@ -5,12 +5,7 @@ local util = require("lspeek.util")
 local M = {}
 
 local function open_preview(location)
-  local uri = location.uri or location.targetUri
-
-  if not uri:match("^%w+://") then
-    uri = vim.uri_from_fname(uri)
-  end
-
+  local uri = util.normalize_uri(location.uri or location.targetUri)
   local bufnr = util.ensure_loaded_buf(uri)
   local fname = vim.uri_to_fname(uri)
 
@@ -57,19 +52,32 @@ local function peek_request(method, label)
 
   local params = vim.lsp.util.make_position_params(0, "utf-16")
 
-  vim.lsp.buf_request(0, method, params, function(err, result)
-    if err then
-      vim.notify(err.message, vim.log.levels.ERROR)
+  vim.lsp.buf_request_all(0, method, params, function(results)
+    if not results or vim.tbl_isempty(results) then
+      vim.notify(("No %s found"):format(label), vim.log.levels.WARN)
       return
     end
 
-    if not result or vim.tbl_isempty(result) then
+    local all_locations = {}
+    for _, res in pairs(results) do
+      if not res.err and res.result then
+        if vim.islist(res.result) then
+          for _, loc in ipairs(res.result) do
+            table.insert(all_locations, loc)
+          end
+        else
+          table.insert(all_locations, res.result)
+        end
+      end
+    end
+
+    if #all_locations == 0 then
       vim.notify(("No %s found"):format(label), vim.log.levels.WARN)
       return
     end
 
     local search_uri, search_pos = get_search_context(params)
-    local locations = util.filter_other_locations(result, search_uri, search_pos)
+    local locations = util.filter_other_locations(all_locations, search_uri, search_pos)
 
     if #locations == 0 then
       vim.notify(("Already at %s"):format(label), vim.log.levels.WARN)

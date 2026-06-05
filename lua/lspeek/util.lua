@@ -74,7 +74,7 @@ function M.filter_other_locations(result, search_uri, search_pos)
   return { result }
 end
 
---- Returns a loaded buffer for the given URI, loading it if necessary.
+--- Returns a loaded buffer for the given URI
 function M.ensure_loaded_buf(uri)
   local bufnr = vim.uri_to_bufnr(uri)
 
@@ -85,11 +85,18 @@ function M.ensure_loaded_buf(uri)
   return bufnr
 end
 
+function M.normalize_uri(uri)
+  if not uri:match("^%w+://") then
+    return vim.uri_from_fname(uri)
+  end
+  return uri
+end
+
 --- Formats an LSP location for display in the quickpick.
 --- @param location table lsp.Location or lsp.LocationLink
 --- @return string
 function M.format_location(location)
-  local uri = location.uri or location.targetUri
+  local uri = M.normalize_uri(location.uri or location.targetUri)
   local fname = vim.uri_to_fname(uri)
   local range = location.range or location.targetSelectionRange
   local line = range and range.start.line + 1 or 0
