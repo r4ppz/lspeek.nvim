@@ -8,6 +8,7 @@
 ---@field split string Keymap to open definition in horizontal split
 ---@field vsplit string Keymap to open definition in vertical split
 ---@field enter string Keymap to open definition in current buffer
+---@field tab string Keymap to open definition in a new tab
 
 ---@class lspeek.Config
 ---@field window? lspeek.Config.Window Window configuration options
@@ -34,6 +35,7 @@ M.defaults = {
     split = "s",
     vsplit = "v",
     enter = "<CR>",
+    tab = "t",
   },
 }
 

@@ -99,6 +99,7 @@ function Preview:close()
     pcall(vim.keymap.del, "n", config.keymaps.close, { buffer = self.target.buf })
     pcall(vim.keymap.del, "n", config.keymaps.vsplit, { buffer = self.target.buf })
     pcall(vim.keymap.del, "n", config.keymaps.split, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.keymaps.tab, { buffer = self.target.buf })
     pcall(vim.keymap.del, "n", config.keymaps.enter, { buffer = self.target.buf })
   end
 
@@ -146,6 +147,9 @@ local function jump_to_target(operation, preview)
   if operation == "vsplit" or operation == "split" then
     vim.cmd(operation)
     vim.api.nvim_set_current_buf(preview.target.buf)
+    pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+  elseif operation == "tab" then
+    vim.cmd("tabedit " .. vim.fn.fnameescape(preview.target.full_path))
     pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
   elseif operation == "edit" then
     local current_path = vim.api.nvim_buf_get_name(0)
@@ -195,6 +199,14 @@ local function set_preview_keymaps(buf)
       return
     end
     perform_jump_operation("split", preview)
+  end, map_opts)
+
+  vim.keymap.set("n", config.keymaps.tab, function()
+    local preview = get_preview_by_win(vim.api.nvim_get_current_win())
+    if not preview then
+      return
+    end
+    perform_jump_operation("tab", preview)
   end, map_opts)
 
   vim.keymap.set("n", config.keymaps.enter, function()
