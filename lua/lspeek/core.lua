@@ -29,6 +29,7 @@ end
 
 local function open_or_pick_location(locations, label)
   vim.cmd("normal! m'")
+
   if #locations == 1 or config.select_first then
     open_preview(locations[1])
   else
@@ -41,6 +42,22 @@ local function open_or_pick_location(locations, label)
       end
     end)
   end
+end
+
+local function collect_client_locations(results)
+  local all_locations = {}
+  for client_id, res in pairs(results) do
+    local client = vim.lsp.get_client_by_id(client_id)
+    local client_name = client and client.name or "?"
+    if not res.err and res.result then
+      local items = vim.islist(res.result) and res.result or { res.result }
+      for _, loc in ipairs(items) do
+        loc.client_name = client_name
+        table.insert(all_locations, loc)
+      end
+    end
+  end
+  return all_locations
 end
 
 local function peek_request(method, label)
@@ -58,18 +75,7 @@ local function peek_request(method, label)
       return
     end
 
-    local all_locations = {}
-    for _, res in pairs(results) do
-      if not res.err and res.result then
-        if vim.islist(res.result) then
-          for _, loc in ipairs(res.result) do
-            table.insert(all_locations, loc)
-          end
-        else
-          table.insert(all_locations, res.result)
-        end
-      end
-    end
+    local all_locations = collect_client_locations(results)
 
     if #all_locations == 0 then
       vim.notify(("No %s found"):format(label), vim.log.levels.WARN)

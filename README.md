@@ -56,13 +56,13 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 - `s`/`v`/`t`/`<CR>` inside the preview window opens the definition in a split, vsplit, new tab, current/new buffer.
 - You can also use `:LSPeekDef` and `:LSPeekTypeDef` if you prefer commands over the Lua API.
 - Opening a preview stores the cursor position in the buffer-local `'` mark.
-- Aggregates results from multiple LSP clients (e.g., `ts_ls` + `cssls` + `emmet_ls` + etc).
+- Aggregates results from multiple LSP clients (e.g., `ts_ls` + `cssls` + etc).
 - Uses `vim.ui.select` for multiple results -- better with a picker plugin.
 - Won't open a preview if already at the definition.
 
 ---
 
-> Found a bug? open an [issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
+> Found a bug? open an [Issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
 
 ---
 

@@ -79,10 +79,20 @@ function M.ensure_loaded_buf(uri)
   local bufnr = vim.uri_to_bufnr(uri)
 
   if not vim.api.nvim_buf_is_loaded(bufnr) then
-    vim.fn.bufload(bufnr)
+    pcall(vim.fn.bufload, bufnr)
   end
 
   return bufnr
+end
+
+--- Formats an LSP location for display in the quickpick.
+function M.format_location(location)
+  local uri = M.normalize_uri(location.uri or location.targetUri)
+  local fname = vim.uri_to_fname(uri)
+  local range = location.range or location.targetSelectionRange
+  local line = range and range.start.line + 1 or 0
+  local suffix = location.client_name and (" [" .. location.client_name .. "]") or ""
+  return vim.fn.fnamemodify(fname, ":t") .. ":" .. line .. suffix
 end
 
 function M.normalize_uri(uri)
@@ -90,17 +100,6 @@ function M.normalize_uri(uri)
     return vim.uri_from_fname(uri)
   end
   return uri
-end
-
---- Formats an LSP location for display in the quickpick.
---- @param location table lsp.Location or lsp.LocationLink
---- @return string
-function M.format_location(location)
-  local uri = M.normalize_uri(location.uri or location.targetUri)
-  local fname = vim.uri_to_fname(uri)
-  local range = location.range or location.targetSelectionRange
-  local line = range and range.start.line + 1 or 0
-  return vim.fn.fnamemodify(fname, ":t") .. ":" .. line
 end
 
 return M
