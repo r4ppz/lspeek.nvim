@@ -4,8 +4,10 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 
 [preview vid](https://github.com/user-attachments/assets/eff58491-54f3-469c-b918-c52f59c60dd2)
 
+### Plugin Spec example:
+
 ```lua
--- Plugin spec:
+-- Default config
 {
   "r4ppz/lspeek.nvim",
   opts = {
@@ -18,22 +20,32 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     -- Limits the number of stack preview windows.
     stack_limit = 5,
 
-    -- LSP can return multiple definitions (e.g., overloaded functions).
-    -- false = open vim.ui.select to pick one (default).
-    -- true  = skip the picker and jump to the first result.
+    -- LSP can return multiple definitions
+    -- (e.g., overloaded functions or multiple clients).
+    -- false = open vim.ui.select to pick one (pairs well with a picker plugin).
+    -- true  = skip the picker and preview the first result.
     select_first = false,
 
     -- Preview window is read-only.
-    -- To edit the file, open it in a split, new buffer or tab.
+    -- To edit you must press on of these keybinds.
     keymaps = {
-      close = "q",
-      split = "s",
-      vsplit = "v",
-      enter = "<CR>",
-      tab = "t",
+      close = "q",   -- Close the floating preview window
+      split = "s",   -- Open def in a horizontal split
+      vsplit = "v",  -- Open def in a vertical split
+      enter = "<CR>",-- Open def in the current/new buffer
+      tab = "t",     -- Open def in a new tab
     },
   },
 
+  -- Note:
+  -- Stores the current cursor position in the buffer-local ' mark before opening a preview.
+  -- Aggregates results from multiple active LSP clients (e.g., ts_ls + cssls).
+  -- Won't open a preview if your cursor is already sitting at the definition.
+  -- Tries its best to restore your exact cursor location when closing windows.
+
+  -- Keymaps call the Lua API. Alternatively, use user commands:
+  -- :LSPeekDef      -> Peek Definition
+  -- :LSPeekTypeDef  -> Peek Type Definition
   keys = {
     {
       "gD",
@@ -51,18 +63,12 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     },
   },
 }
-```
 
-- `s`/`v`/`t`/`<CR>` inside the preview window opens the definition in a split, vsplit, new tab, current/new buffer.
-- You can also use `:LSPeekDef` and `:LSPeekTypeDef` if you prefer commands over the Lua API.
-- Opening a preview stores the cursor position in the buffer-local `'` mark.
-- Aggregates results from multiple LSP clients (e.g., `ts_ls` + `cssls` + etc).
-- Uses `vim.ui.select` for multiple results -- better with a picker plugin.
-- Won't open a preview if already at the definition.
+```
 
 ---
 
-> Found a bug? open an [Issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
+> Found a bug? Open an [Issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
 
 ---
 
@@ -71,6 +77,7 @@ _This plugin was inspired by [lspsaga's peek definition](https://nvimdev.github.
 I am trying to keep this minimal and lightweight so no fancy features for now.
 If you're looking for similar functionality with many more features, check out these plugins:
 
-- [glance.nvim](https://github.com/DNLHC/glance.nvim)
 - [goto-preview](https://github.com/rmagatti/goto-preview)
+- [overlook.nvim](https://github.com/WilliamHsieh/overlook.nvim)
 - [lspsaga](https://github.com/nvimdev/lspsaga.nvim)
+- [glance.nvim](https://github.com/DNLHC/glance.nvim)
