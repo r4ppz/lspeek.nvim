@@ -151,6 +151,21 @@ end
 
 local function set_preview_keymaps(buf)
   local map_opts = { buffer = buf, silent = true, nowait = true }
+
+  local function navigate(direction)
+    local cur_win = vim.api.nvim_get_current_win()
+    for i, preview in ipairs(stack) do
+      if preview.win == cur_win then
+        local next = ((i - 1 + direction) % #stack) + 1
+        local target = stack[next]
+        if target.win and vim.api.nvim_win_is_valid(target.win) then
+          vim.api.nvim_set_current_win(target.win)
+        end
+        return
+      end
+    end
+  end
+
   local actions = {
     close = function(p)
       p:close()
@@ -166,6 +181,12 @@ local function set_preview_keymaps(buf)
     end,
     enter = function(p)
       perform_jump_operation("edit", p)
+    end,
+    prev = function()
+      navigate(-1)
+    end,
+    next = function()
+      navigate(1)
     end,
   }
 
