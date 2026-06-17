@@ -3,8 +3,8 @@ if vim.g.loaded_lspeek then
 end
 vim.g.loaded_lspeek = 1
 
-if vim.fn.has("nvim-0.7") ~= 1 then
-  vim.notify("lspeek.nvim requires Neovim >= 0.7", vim.log.levels.ERROR)
+if vim.fn.has("nvim-0.10") ~= 1 then
+  vim.notify("lspeek.nvim requires Neovim >= 0.10", vim.log.levels.ERROR)
   return
 end
 
