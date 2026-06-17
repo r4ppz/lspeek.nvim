@@ -9,6 +9,8 @@
 ---@field vsplit string
 ---@field enter string
 ---@field tab string
+---@field prev string
+---@field next string
 
 ---@class lspeek.Config
 ---@field window? lspeek.Config.Window
@@ -36,6 +38,8 @@ M.defaults = {
     vsplit = "v",
     enter = "<CR>",
     tab = "t",
+    prev = "[",
+    next = "]",
   },
 }
 

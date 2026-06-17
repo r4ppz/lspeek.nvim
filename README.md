@@ -32,6 +32,8 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
       vsplit = "v",
       enter = "<CR>",
       tab = "t",
+      prev = "[",
+      next = "]",
     },
   },
 
@@ -62,6 +64,7 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 - Preview definitions and type definitions in a read-only floating window
 - Open the target in a split, vsplit, tab, or current buffer
 - Stack multiple preview windows and keep peeking deeper
+- Navigate between stacked previews with `[` and `]`
 - Combines results from all attached LSP clients
 - Won't reopen a preview if you're already at the target location
 - Saves your cursor position (`'`) before jumping
