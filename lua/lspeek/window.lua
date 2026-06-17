@@ -230,6 +230,15 @@ function M.create_preview_floating_window(source, target)
   }
 
   instance.win = vim.api.nvim_open_win(target.buf, true, win_config)
+
+  -- Pin to editor grid so closing other floats can't shift this one
+  local pos = vim.api.nvim_win_get_position(instance.win)
+  vim.api.nvim_win_set_config(instance.win, {
+    relative = "editor",
+    row = pos[1],
+    col = pos[2],
+  })
+
   set_preview_win_opts(instance.win, target.buf)
   set_preview_keymaps(target.buf)
   register_winclosed_autocmd(instance.win, instance)
