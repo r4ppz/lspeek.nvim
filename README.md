@@ -4,10 +4,9 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 
 [preview vid](https://github.com/user-attachments/assets/eff58491-54f3-469c-b918-c52f59c60dd2)
 
-### Plugin Spec example:
+### Plugin spec example
 
 ```lua
--- Default config
 {
   "r4ppz/lspeek.nvim",
   opts = {
@@ -17,7 +16,7 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
       border = "single", -- double | rounded | solid | shadow
     },
 
-    -- Limits the number of stack preview windows.
+    -- Limits the number of stacked preview windows.
     stack_limit = 5,
 
     -- LSP can return multiple definitions
@@ -26,22 +25,15 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     -- true  = skip the picker and preview the first result.
     select_first = false,
 
-    -- Preview window is read-only.
-    -- To edit you must press on of these keybinds.
+    -- Keymaps available inside the preview window.
     keymaps = {
-      close = "q",   -- Close the floating preview window
-      split = "s",   -- Open def in a horizontal split
-      vsplit = "v",  -- Open def in a vertical split
-      enter = "<CR>",-- Open def in the current/new buffer
-      tab = "t",     -- Open def in a new tab
+      close = "q",
+      split = "s",
+      vsplit = "v",
+      enter = "<CR>",
+      tab = "t",
     },
   },
-
-  -- Note:
-  -- Stores the current cursor position in the buffer-local ' mark before opening a preview.
-  -- Aggregates results from multiple active LSP clients (e.g., ts_ls + cssls).
-  -- Won't open a preview if your cursor is already sitting at the definition.
-  -- Tries its best to restore your exact cursor location when closing windows.
 
   -- Keymaps call the Lua API. Alternatively, use user commands:
   -- :LSPeekDef      -> Peek Definition
@@ -63,18 +55,25 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     },
   },
 }
-
 ```
 
+### Features
+
+- Preview definitions and type definitions in a read-only floating window
+- Open the target in a split, vsplit, tab, or current buffer
+- Stack multiple preview windows and keep peeking deeper
+- Combines results from all attached LSP clients
+- Won't reopen a preview if you're already at the target location
+- Saves your cursor position (`'`) before jumping
+
 ---
 
-> Found a bug? Open an [Issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
+> Found a bug? Open an [issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
 
 ---
 
-_This plugin was inspired by [lspsaga's peek definition](https://nvimdev.github.io/lspsaga/definition/)._
+_Inspired by [lspsaga's peek definition](https://nvimdev.github.io/lspsaga/definition/)._
 
-I am trying to keep this minimal and lightweight so no fancy features for now.
 If you're looking for similar functionality with many more features, check out these plugins:
 
 - [goto-preview](https://github.com/rmagatti/goto-preview)

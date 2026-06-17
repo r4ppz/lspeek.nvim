@@ -19,10 +19,6 @@ local function open_preview(location)
   end
 end
 
-local function get_search_context(params)
-  return params.textDocument.uri, params.position
-end
-
 local function open_or_pick_location(locations, label)
   vim.cmd("normal! m'")
 
@@ -78,7 +74,7 @@ local function peek_request(method, label)
       return
     end
 
-    local search_uri, search_pos = get_search_context(params)
+    local search_uri, search_pos = params.textDocument.uri, params.position
     local locations = util.filter_other_locations(all_locations, search_uri, search_pos)
 
     if #locations == 0 then

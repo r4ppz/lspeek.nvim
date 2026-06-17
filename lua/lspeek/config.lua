@@ -1,20 +1,20 @@
 ---@class lspeek.Config.Window
----@field width integer Window width in characters
----@field height integer Window height in lines
----@field border string|string[] Window border style (e.g., "single", "double", "rounded")
+---@field width integer
+---@field height integer
+---@field border string|string[]
 
 ---@class lspeek.Config.Keymap
----@field close string Keymap to close the preview window
----@field split string Keymap to open definition in horizontal split
----@field vsplit string Keymap to open definition in vertical split
----@field enter string Keymap to open definition in current buffer
----@field tab string Keymap to open definition in a new tab
+---@field close string
+---@field split string
+---@field vsplit string
+---@field enter string
+---@field tab string
 
 ---@class lspeek.Config
----@field window? lspeek.Config.Window Window configuration options
----@field keymaps? lspeek.Config.Keymap Keymap configuration
----@field stack_limit? integer Maximum number of nested preview windows to keep on the stack
----@field select_first? boolean Skip picker and open first result directly
+---@field window? lspeek.Config.Window
+---@field keymaps? lspeek.Config.Keymap
+---@field stack_limit? integer
+---@field select_first? boolean
 
 local M = {}
 
@@ -42,9 +42,7 @@ M.defaults = {
 ---@type lspeek.Config
 M.options = {}
 
----Merge user options with defaults and store the result
----@param user_opts? lspeek.Config User-provided configuration options
----@return nil
+---@param user_opts? lspeek.Config
 function M.setup(user_opts)
   M.options = vim.tbl_deep_extend("force", M.defaults, user_opts or {})
 end
