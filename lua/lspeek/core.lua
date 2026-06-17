@@ -20,10 +20,6 @@ local function open_preview(location)
 end
 
 local function get_search_context(params)
-  local preview = window.get_current_preview()
-  if preview then
-    return preview.target.uri, preview.target.pos
-  end
   return params.textDocument.uri, params.position
 end
 

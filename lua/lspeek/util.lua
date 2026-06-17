@@ -38,7 +38,7 @@ function M.location_matches_position(location, search_uri, search_pos)
   if not uri or not range then
     return false
   end
-  if uri ~= search_uri then
+  if vim.uri_to_fname(uri) ~= vim.uri_to_fname(search_uri) then
     return false
   end
   local startp = range.start
@@ -49,6 +49,9 @@ function M.location_matches_position(location, search_uri, search_pos)
 
   -- LSP ranges are start-inclusive and end-exclusive:
   -- start <= pos < end
+  if startp.line == endp.line and startp.character == endp.character then
+    return search_pos.line == startp.line and search_pos.character == startp.character
+  end
   return pos_lte(startp, search_pos) and pos_lt(search_pos, endp)
 end
 
