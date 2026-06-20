@@ -83,6 +83,8 @@ function Preview:close()
     pcall(vim.keymap.del, "n", config.keymaps.split, { buffer = self.target.buf })
     pcall(vim.keymap.del, "n", config.keymaps.tab, { buffer = self.target.buf })
     pcall(vim.keymap.del, "n", config.keymaps.enter, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.keymaps.prev, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.keymaps.next, { buffer = self.target.buf })
   end
 
   if #stack > 0 then
