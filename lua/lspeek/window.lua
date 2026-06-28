@@ -207,6 +207,9 @@ end
 local function set_preview_win_opts(win, target_buf)
   vim.api.nvim_set_option_value("winbar", "", { win = win })
   vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+  if config.show_line_numbers then
+    vim.api.nvim_set_option_value("number", true, { win = win })
+  end
   vim.bo[target_buf].modifiable = false
 end
 

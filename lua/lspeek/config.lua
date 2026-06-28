@@ -17,6 +17,7 @@
 ---@field keymaps? lspeek.Config.Keymap
 ---@field stack_limit? integer
 ---@field select_first? boolean
+---@field show_line_numbers? boolean
 
 local M = {}
 
@@ -31,6 +32,8 @@ M.defaults = {
   stack_limit = 5,
 
   select_first = false,
+
+  show_line_numbers = false,
 
   keymaps = {
     close = "q",

@@ -25,6 +25,9 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     -- true  = skip the picker and preview the first result.
     select_first = false,
 
+    -- Show line numbers in the preview window.
+    show_line_numbers = false,
+
     -- Keymaps available inside the preview window.
     keymaps = {
       close = "q",
