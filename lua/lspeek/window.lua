@@ -205,8 +205,12 @@ local function set_preview_keymaps(buf)
 end
 
 local function set_preview_win_opts(win, target_buf)
-  vim.api.nvim_set_option_value("winbar", "", { win = win })
-  vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+  for opt, val in pairs(config.window.win_opts or {}) do
+    local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, { win = win })
+    if not ok then
+      vim.notify(("lspeek: skipping invalid win_opts '%s': %s"):format(opt, err), vim.log.levels.WARN)
+    end
+  end
   vim.bo[target_buf].modifiable = false
 end
 

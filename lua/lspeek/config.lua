@@ -2,6 +2,7 @@
 ---@field width integer
 ---@field height integer
 ---@field border string|string[]
+---@field win_opts? table<string, any>
 
 ---@class lspeek.Config.Keymap
 ---@field close string
@@ -26,6 +27,10 @@ M.defaults = {
     width = 70,
     height = 15,
     border = "single",
+    win_opts = {
+      signcolumn = "no",
+      winbar = "",
+    },
   },
 
   stack_limit = 5,
