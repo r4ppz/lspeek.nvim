@@ -17,7 +17,10 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
       -- Window-local options applied to the preview window.
       -- Each key-value pair is set via vim.api.nvim_set_option_value.
       win_opts = {
-        number = true, -- show line numbers
+        -- Examples:
+        -- signcolumn = "yes",
+        -- number = true,
+        -- relativenumber = true,
       },
     },
 

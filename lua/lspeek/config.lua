@@ -27,7 +27,10 @@ M.defaults = {
     width = 70,
     height = 15,
     border = "single",
-    win_opts = {},
+    win_opts = {
+      signcolumn = "no",
+      winbar = "",
+    },
   },
 
   stack_limit = 5,
