@@ -14,6 +14,11 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
       width = 70,
       height = 15,
       border = "single", -- double | rounded | solid | shadow
+      -- Window-local options applied to the preview window.
+      -- Each key-value pair is set via vim.api.nvim_set_option_value.
+      win_opts = {
+        number = true, -- show line numbers
+      },
     },
 
     -- Limits the number of stacked preview windows.
@@ -24,9 +29,6 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     -- false = open vim.ui.select to pick one (pairs well with a picker plugin).
     -- true  = skip the picker and preview the first result.
     select_first = false,
-
-    -- Show line numbers in the preview window.
-    show_line_numbers = false,
 
     -- Keymaps available inside the preview window.
     keymaps = {

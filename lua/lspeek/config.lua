@@ -2,6 +2,7 @@
 ---@field width integer
 ---@field height integer
 ---@field border string|string[]
+---@field win_opts? table<string, any>
 
 ---@class lspeek.Config.Keymap
 ---@field close string
@@ -17,7 +18,6 @@
 ---@field keymaps? lspeek.Config.Keymap
 ---@field stack_limit? integer
 ---@field select_first? boolean
----@field show_line_numbers? boolean
 
 local M = {}
 
@@ -27,13 +27,12 @@ M.defaults = {
     width = 70,
     height = 15,
     border = "single",
+    win_opts = {},
   },
 
   stack_limit = 5,
 
   select_first = false,
-
-  show_line_numbers = false,
 
   keymaps = {
     close = "q",
