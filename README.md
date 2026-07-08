@@ -35,19 +35,16 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 
     -- Keymaps available inside the preview window.
     keymaps = {
-      close = "q",
-      split = "s",
-      vsplit = "v",
-      enter = "<CR>",
-      tab = "t",
-      prev = "[",
-      next = "]",
+      close = "q",    -- close preview
+      split = "s",    -- open target in horizontal split
+      vsplit = "v",   -- open target in vertical split
+      enter = "<CR>", -- open target in current window
+      tab = "t",      -- open target in new tab
+      prev = "[",     -- go to previous preview
+      next = "]",     -- go to next preview
     },
   },
 
-  -- Keymaps call the Lua API. Alternatively, use user commands:
-  -- :LSPeekDef      -> Peek Definition
-  -- :LSPeekTypeDef  -> Peek Type Definition
   keys = {
     {
       "gD",
@@ -77,9 +74,25 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 - Won't reopen a preview if you're already at the target location
 - Saves your cursor position (`'`) before jumping
 
+### API
+
+```lua
+require("lspeek").setup(opts)               -- Initialize with options
+require("lspeek").peek_definition()         -- Preview definition at cursor
+require("lspeek").peek_type_definition()    -- Preview type definition at cursor
+require("lspeek").close_all()               -- Close all open previews
+```
+
+### User Commands
+
+```
+:LSPeekDef        Peek definition
+:LSPeekTypeDef    Peek type definition
+```
+
 ---
 
-> Found a bug? Open an [issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls) :)
+> Found a bug or have an idea? Open an [issue](https://github.com/r4ppz/lspeek.nvim/issues/new) or [PR](https://github.com/r4ppz/lspeek.nvim/pulls). Contributions welcome!
 
 ---
 

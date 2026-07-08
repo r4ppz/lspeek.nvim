@@ -49,7 +49,7 @@ local function get_preview_by_win(win)
   return nil
 end
 
-local function close_all_previews()
+function M.close_all()
   vim.opt.eventignore:append("WinClosed")
   while #stack > 0 do
     pcall(stack[#stack].close, stack[#stack])
@@ -140,7 +140,7 @@ local function jump_to_target(operation, preview)
 end
 
 local function perform_jump_operation(operation, preview)
-  close_all_previews()
+  M.close_all()
 
   local source_win = vim.api.nvim_get_current_win()
   jump_to_target(operation, preview)

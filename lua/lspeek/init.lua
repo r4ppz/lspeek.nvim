@@ -15,4 +15,8 @@ function M.peek_type_definition()
   require("lspeek.core").peek_type_definition()
 end
 
+function M.close_all()
+  require("lspeek.window").close_all()
+end
+
 return M
