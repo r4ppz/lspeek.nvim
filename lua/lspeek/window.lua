@@ -125,8 +125,7 @@ local function jump_to_target(operation, preview)
   local target_pos = util.lsp_pos_to_vim_cursor(preview.target.pos)
 
   if operation == "vsplit" or operation == "split" then
-    vim.cmd(operation)
-    vim.api.nvim_set_current_buf(preview.target.buf)
+    vim.cmd(operation .. " " .. vim.fn.fnameescape(preview.target.full_path))
   elseif operation == "tab" then
     vim.cmd("tabedit " .. vim.fn.fnameescape(preview.target.full_path))
   elseif operation == "edit" then
