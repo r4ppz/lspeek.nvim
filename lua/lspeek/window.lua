@@ -95,30 +95,30 @@ function Preview:close()
   end
 end
 
-local function smart_win_opts(width, height)
+local function get_window_config(width, height, title)
   local ui = vim.api.nvim_list_uis()[1]
   local screen_w, screen_h = ui.width, ui.height
   local cursor = vim.fn.screenpos(0, vim.fn.line("."), vim.fn.col("."))
 
-  local row, col, anchor
+  -- Determine anchors based on screen boundary overflows
+  local is_overflow_h = (cursor.row + height + 2 > screen_h)
+  local is_overflow_w = (cursor.col + width > screen_w)
 
-  if cursor.row + height + 2 > screen_h then
-    anchor = "S"
-    row = 0
-  else
-    anchor = "N"
-    row = 1
-  end
+  local anchor_v = is_overflow_h and "S" or "N"
+  local anchor_h = is_overflow_w and "E" or "W"
 
-  if cursor.col + width > screen_w then
-    anchor = anchor .. "E"
-    col = 1
-  else
-    anchor = anchor .. "W"
-    col = 0
-  end
-
-  return { row = row, col = col, anchor = anchor }
+  return {
+    relative = "editor",
+    style = "minimal",
+    title_pos = "center",
+    title = title,
+    width = width,
+    height = height,
+    border = config.window.border,
+    anchor = anchor_v .. anchor_h,
+    row = is_overflow_h and (cursor.row - 1) or cursor.row,
+    col = is_overflow_w and cursor.col or (cursor.col - 1),
+  }
 end
 
 local function jump_to_target(operation, preview)
@@ -243,29 +243,9 @@ function M.create_preview_floating_window(source, target)
   }
   setmetatable(instance, Preview)
 
-  local smart = smart_win_opts(config.window.width, config.window.height)
-  local win_config = {
-    relative = "cursor",
-    title_pos = "center",
-    style = "minimal",
-    anchor = smart.anchor,
-    row = smart.row,
-    col = smart.col,
-    width = config.window.width,
-    height = config.window.height,
-    border = config.window.border,
-    title = target.filename,
-  }
+  local win_config = get_window_config(config.window.width, config.window.height, target.filename)
 
   instance.win = vim.api.nvim_open_win(target.buf, true, win_config)
-
-  -- Pin to editor grid so closing other floats can't shift this one
-  local pos = vim.api.nvim_win_get_position(instance.win)
-  vim.api.nvim_win_set_config(instance.win, {
-    relative = "editor",
-    row = pos[1],
-    col = pos[2],
-  })
 
   set_preview_win_opts(instance.win, target.buf)
   set_preview_keymaps(target.buf)
