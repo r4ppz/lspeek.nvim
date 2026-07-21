@@ -4,6 +4,8 @@ local util = require("lspeek.util")
 
 local M = {}
 
+---Open a single LSP location in a preview window.
+---@param location lsp.Location|lsp.LocationLink
 local function open_preview(location)
   local uri = util.normalize_uri(location.uri or location.targetUri)
   local bufnr = util.ensure_loaded_buf(uri)
@@ -19,6 +21,9 @@ local function open_preview(location)
   end
 end
 
+---Open a vim.ui.select picker or directly show the first location.
+---@param locations (lsp.Location|lsp.LocationLink)[]
+---@param label string
 local function open_or_pick_location(locations, label)
   vim.cmd("normal! m'")
 
@@ -36,6 +41,9 @@ local function open_or_pick_location(locations, label)
   end
 end
 
+---Collect and decorate locations from all LSP client responses.
+---@param results table<integer, {err: any, result: any}>
+---@return (lsp.Location|lsp.LocationLink)[]
 local function collect_client_locations(results)
   local all_locations = {}
   for client_id, res in pairs(results) do
@@ -52,6 +60,9 @@ local function collect_client_locations(results)
   return all_locations
 end
 
+---Send an LSP request and route results to the preview/picker flow.
+---@param method string  e.g. "textDocument/definition"
+---@param label string   human-readable label for notifications
 local function peek_request(method, label)
   local clients = vim.lsp.get_clients({ bufnr = 0 })
   if #clients == 0 then
@@ -86,10 +97,12 @@ local function peek_request(method, label)
   end)
 end
 
+---Preview the LSP definition at cursor position.
 function M.peek_definition()
   peek_request("textDocument/definition", "definition")
 end
 
+---Preview the LSP type definition at cursor position.
 function M.peek_type_definition()
   peek_request("textDocument/typeDefinition", "type definition")
 end

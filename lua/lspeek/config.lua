@@ -51,6 +51,7 @@ M.defaults = {
 ---@type lspeek.Config
 M.options = {}
 
+---Set up lspeek with user options. Merges with defaults.
 ---@param user_opts? lspeek.Config
 function M.setup(user_opts)
   M.options = vim.tbl_deep_extend("force", M.defaults, user_opts or {})

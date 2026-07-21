@@ -13,7 +13,7 @@ local M = {}
 ---@field pos lspeek.Preview.Pos
 ---@field uri string
 
----@class lsp.Preview.Target
+---@class lspeek.Preview.Target
 ---@field buf integer
 ---@field pos lspeek.Preview.Pos
 ---@field filename string
@@ -22,15 +22,18 @@ local M = {}
 
 ---@class lspeek.Preview
 ---@field source lspeek.Preview.Source
----@field target lsp.Preview.Target
+---@field target lspeek.Preview.Target
 ---@field win? integer
 ---@field _winclosed_au? integer
----@field close? fun(self)
 local Preview = {}
 Preview.__index = Preview
 
+---@type lspeek.Preview[]
 local stack = {}
 
+---Check if a buffer is already open in any preview window.
+---@param buf integer
+---@return boolean
 local function is_buffer_in_previews(buf)
   for _, preview in ipairs(stack) do
     if preview.target.buf == buf then
@@ -40,6 +43,9 @@ local function is_buffer_in_previews(buf)
   return false
 end
 
+---Find the preview whose window handle matches.
+---@param win integer
+---@return lspeek.Preview?
 local function get_preview_by_win(win)
   for _, preview in ipairs(stack) do
     if preview.win == win then
@@ -49,6 +55,7 @@ local function get_preview_by_win(win)
   return nil
 end
 
+---Close all stacked previews, suppressing WinClosed events to avoid recursion.
 function M.close_all()
   vim.opt.eventignore:append("WinClosed")
   while #stack > 0 do
@@ -57,6 +64,7 @@ function M.close_all()
   vim.opt.eventignore:remove("WinClosed")
 end
 
+---Close this preview, clean up autocmds and keymaps, focus the previous preview.
 function Preview:close()
   if self.win and vim.api.nvim_win_is_valid(self.win) then
     local win = self.win
@@ -95,6 +103,11 @@ function Preview:close()
   end
 end
 
+---Compute floating window dimensions and position relative to the editor cursor.
+---@param width integer
+---@param height integer
+---@param title string
+---@return vim.api.keyset.win_config
 local function get_window_config(width, height, title)
   local ui = vim.api.nvim_list_uis()[1]
   local screen_w, screen_h = ui.width, ui.height
@@ -121,6 +134,9 @@ local function get_window_config(width, height, title)
   }
 end
 
+---Open the target file in a split/vsplit/tab/edit and position the cursor.
+---@param operation "vsplit"|"split"|"tab"|"edit"
+---@param preview lspeek.Preview
 local function jump_to_target(operation, preview)
   local target_pos = util.lsp_pos_to_vim_cursor(preview.target.pos)
 
@@ -138,6 +154,9 @@ local function jump_to_target(operation, preview)
   pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
 end
 
+---Close all previews then execute a jump operation.
+---@param operation "vsplit"|"split"|"tab"|"edit"
+---@param preview lspeek.Preview
 local function perform_jump_operation(operation, preview)
   M.close_all()
 
@@ -150,9 +169,13 @@ local function perform_jump_operation(operation, preview)
   end
 end
 
+---Set keymaps on the preview buffer for close/split/vsplit/tab/enter/prev/next.
+---@param buf integer
 local function set_preview_keymaps(buf)
   local map_opts = { buffer = buf, silent = true, nowait = true }
 
+  ---Navigate between stacked previews.
+  ---@param direction integer  -1 for previous, 1 for next
   local function navigate(direction)
     local cur_win = vim.api.nvim_get_current_win()
 
@@ -203,6 +226,9 @@ local function set_preview_keymaps(buf)
   end
 end
 
+---Apply window-local options from config and make the buffer non-modifiable.
+---@param win integer
+---@param target_buf integer
 local function set_preview_win_opts(win, target_buf)
   for opt, val in pairs(config.window.win_opts or {}) do
     local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, { win = win })
@@ -213,6 +239,9 @@ local function set_preview_win_opts(win, target_buf)
   vim.bo[target_buf].modifiable = false
 end
 
+---Register a WinClosed autocmd to auto-close the preview when the user closes the window.
+---@param win integer
+---@param instance lspeek.Preview
 local function register_winclosed_autocmd(win, instance)
   instance._winclosed_au = vim.api.nvim_create_autocmd("WinClosed", {
     pattern = tostring(win),
@@ -226,8 +255,10 @@ local function register_winclosed_autocmd(win, instance)
   })
 end
 
+---Create a new preview floating window for the given source/target locations.
+---Returns nil if the stack limit has been reached.
 ---@param source lspeek.Preview.Source
----@param target lsp.Preview.Target
+---@param target lspeek.Preview.Target
 ---@return lspeek.Preview|nil
 function M.create_preview_floating_window(source, target)
   local limit = config.stack_limit or 0
@@ -255,10 +286,11 @@ function M.create_preview_floating_window(source, target)
   return instance
 end
 
+---Build a target descriptor from an LSP location and loaded buffer info.
 ---@param location lsp.Location|lsp.LocationLink
 ---@param target_buf integer
 ---@param target_fname string
----@return lsp.Preview.Target
+---@return lspeek.Preview.Target
 function M.build_target_from_location(location, target_buf, target_fname)
   local range = location.range or location.targetSelectionRange
   local pos = { line = 0, character = 0 }
@@ -277,6 +309,8 @@ function M.build_target_from_location(location, target_buf, target_fname)
   }
 end
 
+---Capture the current editor state as a source descriptor.
+---@return lspeek.Preview.Source
 function M.get_source()
   return {
     win = vim.api.nvim_get_current_win(),
