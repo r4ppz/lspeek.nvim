@@ -14,8 +14,8 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
       width = 70,
       height = 15,
       border = "single", -- double | rounded | solid | shadow
+
       -- Window-local options applied to the preview window.
-      -- Each key-value pair is set via vim.api.nvim_set_option_value.
       win_opts = {
         -- Examples:
         -- signcolumn = "yes",
@@ -86,8 +86,8 @@ require("lspeek").close_all()               -- Close all open previews
 ### User Commands
 
 ```
-:LSPeekDef        Peek definition
-:LSPeekTypeDef    Peek type definition
+:LSPeekDef
+:LSPeekTypeDef
 ```
 
 ---
