@@ -1,4 +1,4 @@
-local config = require("lspeek.config").options
+local config = require("lspeek.config")
 local util = require("lspeek.util")
 
 local M = {}
@@ -86,13 +86,13 @@ function Preview:close()
 
   if not is_buffer_in_previews(self.target.buf) and vim.api.nvim_buf_is_valid(self.target.buf) then
     vim.bo[self.target.buf].modifiable = true
-    pcall(vim.keymap.del, "n", config.keymaps.close, { buffer = self.target.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.vsplit, { buffer = self.target.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.split, { buffer = self.target.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.tab, { buffer = self.target.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.enter, { buffer = self.target.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.prev, { buffer = self.target.buf })
-    pcall(vim.keymap.del, "n", config.keymaps.next, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.options.keymaps.close, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.options.keymaps.vsplit, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.options.keymaps.split, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.options.keymaps.tab, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.options.keymaps.enter, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.options.keymaps.prev, { buffer = self.target.buf })
+    pcall(vim.keymap.del, "n", config.options.keymaps.next, { buffer = self.target.buf })
   end
 
   if #stack > 0 then
@@ -127,7 +127,7 @@ local function get_window_config(width, height, title)
     title = title,
     width = width,
     height = height,
-    border = config.window.border,
+    border = config.options.window.border,
     anchor = anchor_v .. anchor_h,
     row = is_overflow_h and (cursor.row - 1) or cursor.row,
     col = is_overflow_w and cursor.col or (cursor.col - 1),
@@ -217,7 +217,7 @@ local function set_preview_keymaps(buf)
   }
 
   for key, fn in pairs(actions) do
-    vim.keymap.set("n", config.keymaps[key], function()
+    vim.keymap.set("n", config.options.keymaps[key], function()
       local preview = get_preview_by_win(vim.api.nvim_get_current_win())
       if preview then
         fn(preview)
@@ -230,7 +230,7 @@ end
 ---@param win integer
 ---@param target_buf integer
 local function set_preview_win_opts(win, target_buf)
-  for opt, val in pairs(config.window.win_opts or {}) do
+  for opt, val in pairs(config.options.window.win_opts or {}) do
     local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, { win = win })
     if not ok then
       vim.notify(("lspeek: skipping invalid win_opts '%s': %s"):format(opt, err), vim.log.levels.WARN)
@@ -261,7 +261,7 @@ end
 ---@param target lspeek.Preview.Target
 ---@return lspeek.Preview|nil
 function M.create_preview_floating_window(source, target)
-  local limit = config.stack_limit or 0
+  local limit = config.options.stack_limit or 0
   if limit > 0 and #stack >= limit then
     vim.notify(("lspeek: preview limit (%d) reached"):format(limit), vim.log.levels.INFO)
     return nil
@@ -274,7 +274,7 @@ function M.create_preview_floating_window(source, target)
   }
   setmetatable(instance, Preview)
 
-  local win_config = get_window_config(config.window.width, config.window.height, target.filename)
+  local win_config = get_window_config(config.options.window.width, config.options.window.height, target.filename)
 
   instance.win = vim.api.nvim_open_win(target.buf, true, win_config)
 

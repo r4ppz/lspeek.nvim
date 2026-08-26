@@ -49,7 +49,7 @@ M.defaults = {
 }
 
 ---@type lspeek.Config
-M.options = {}
+M.options = vim.deepcopy(M.defaults)
 
 ---Set up lspeek with user options. Merges with defaults.
 ---@param user_opts? lspeek.Config
