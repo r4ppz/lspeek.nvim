@@ -263,7 +263,7 @@ end
 function M.create_preview_floating_window(source, target)
   local limit = config.stack_limit or 0
   if limit > 0 and #stack >= limit then
-    vim.notify(("lspeek: preview limit (%d) reached"):format(limit), vim.log.levels.WARN)
+    vim.notify(("lspeek: preview limit (%d) reached"):format(limit), vim.log.levels.INFO)
     return nil
   end
 

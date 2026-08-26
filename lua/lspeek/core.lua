@@ -74,14 +74,14 @@ local function peek_request(method, label)
 
   vim.lsp.buf_request_all(0, method, params, function(results)
     if not results or vim.tbl_isempty(results) then
-      vim.notify(("No %s found"):format(label), vim.log.levels.WARN)
+      vim.notify(("No %s found"):format(label), vim.log.levels.INFO)
       return
     end
 
     local all_locations = collect_client_locations(results)
 
     if #all_locations == 0 then
-      vim.notify(("No %s found"):format(label), vim.log.levels.WARN)
+      vim.notify(("No %s found"):format(label), vim.log.levels.INFO)
       return
     end
 
@@ -89,7 +89,7 @@ local function peek_request(method, label)
     local locations = util.filter_other_locations(all_locations, search_uri, search_pos)
 
     if #locations == 0 then
-      vim.notify(("Already at %s"):format(label), vim.log.levels.WARN)
+      vim.notify(("Already at %s"):format(label), vim.log.levels.INFO)
       return
     end
 
