@@ -86,7 +86,7 @@ local function peek_request(method, label)
     end
 
     local search_uri, search_pos = params.textDocument.uri, params.position
-    local locations = util.filter_other_locations(all_locations, search_uri, search_pos)
+    local locations = util.exclude_at_cursor(all_locations, search_uri, search_pos)
 
     if #locations == 0 then
       vim.notify(("Already at %s"):format(label), vim.log.levels.INFO)

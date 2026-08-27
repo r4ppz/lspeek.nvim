@@ -56,12 +56,12 @@ function M.location_matches_position(location, search_uri, search_pos)
   return pos_lte(startp, search_pos) and pos_lt(search_pos, endp)
 end
 
----Filter out locations whose range contains the cursor position (skip "already there").
+---Filter out the location at the cursor position.
 ---@param locations (lsp.Location|lsp.LocationLink)[]
 ---@param search_uri string
 ---@param search_pos lsp.Position
 ---@return (lsp.Location|lsp.LocationLink)[]
-function M.filter_other_locations(locations, search_uri, search_pos)
+function M.exclude_at_cursor(locations, search_uri, search_pos)
   local filtered = {}
 
   for _, loc in ipairs(locations) do
