@@ -35,7 +35,7 @@ local function get_window_config(width, height, title)
   }
 end
 
----Apply window-local options from config and make the buffer non-modifiable.
+---Apply window-local options from config and lock the target buffer read-only.
 ---@param win integer
 ---@param target_buf integer
 local function set_preview_win_opts(win, target_buf)
@@ -45,7 +45,7 @@ local function set_preview_win_opts(win, target_buf)
       vim.notify(("lspeek: skipping invalid win_opts '%s': %s"):format(opt, err), vim.log.levels.WARN)
     end
   end
-  vim.bo[target_buf].modifiable = false
+  Preview.lock_target_buf(target_buf)
 end
 
 ---Capture the current editor state as a source descriptor.
