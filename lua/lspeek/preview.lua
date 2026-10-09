@@ -68,17 +68,19 @@ end
 
 ---Unlock a target buffer, restoring the options it had before previewing.
 ---@param buf integer
+---@return boolean true when no other live previews use the buffer
 function M.unlock_target_buf(buf)
   if is_buffer_in_previews(buf) then
-    return
+    return false
   end
   local orig = saved_buf_opts[buf]
   saved_buf_opts[buf] = nil
   if orig == nil or not vim.api.nvim_buf_is_valid(buf) then
-    return
+    return true
   end
   vim.bo[buf].modifiable = orig.modifiable
   vim.bo[buf].readonly = orig.readonly
+  return true
 end
 
 ---Find the preview whose window handle matches.
@@ -118,9 +120,9 @@ function Preview:close()
     self._winclosed_au = nil
   end
 
-  M.unlock_target_buf(self.target.buf)
+  local last = M.unlock_target_buf(self.target.buf)
 
-  if not is_buffer_in_previews(self.target.buf) and vim.api.nvim_buf_is_valid(self.target.buf) then
+  if last and vim.api.nvim_buf_is_valid(self.target.buf) then
     for _, key in ipairs(vim.tbl_keys(config.options.keymaps)) do
       pcall(vim.keymap.del, "n", config.options.keymaps[key], { buffer = self.target.buf })
     end
