@@ -42,7 +42,10 @@ local function set_preview_win_opts(win, target_buf)
   for opt, val in pairs(config.options.window.win_opts or {}) do
     local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, { win = win })
     if not ok then
-      vim.notify(("lspeek: skipping invalid win_opts '%s': %s"):format(opt, err), vim.log.levels.WARN)
+      vim.notify(
+        ("lspeek: skipping invalid win_opts '%s': %s"):format(opt, err),
+        vim.log.levels.WARN
+      )
     end
   end
   Preview.lock_target_buf(target_buf)
@@ -99,13 +102,34 @@ function M.create_preview_floating_window(source, target)
 
   local preview = Preview.new(source, target)
 
-  local win_config = get_window_config(config.options.window.width, config.options.window.height, target.filename)
+  local win_config =
+    get_window_config(config.options.window.width, config.options.window.height, target.filename)
 
-  preview.win = vim.api.nvim_open_win(target.buf, true, win_config)
+  local win_ok, win = pcall(vim.api.nvim_open_win, target.buf, true, win_config)
+  if win_ok then
+    preview.win = win
+  end
 
-  set_preview_win_opts(preview.win, target.buf)
-  keymaps.set_preview_keymaps(target.buf)
-  preview:register_autocmd()
+  local setup_ok = win_ok
+    and pcall(function()
+      set_preview_win_opts(preview.win, target.buf)
+      keymaps.set_preview_keymaps(target.buf)
+      preview:register_autocmd()
+    end)
+
+  if not setup_ok then
+    if preview.win and vim.api.nvim_win_is_valid(preview.win) then
+      pcall(vim.api.nvim_win_close, preview.win, true)
+    end
+    local last = Preview.unlock_target_buf(target.buf)
+    if last then
+      for _, key in ipairs(vim.tbl_keys(config.options.keymaps)) do
+        pcall(vim.keymap.del, "n", config.options.keymaps[key], { buffer = target.buf })
+      end
+    end
+    vim.notify("lspeek: failed to open preview", vim.log.levels.WARN)
+    return nil
+  end
 
   Preview.push(preview)
   return preview
