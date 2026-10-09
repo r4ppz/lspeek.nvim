@@ -43,6 +43,46 @@ local function is_buffer_in_previews(buf)
   return false
 end
 
+---@class lspeek.Preview.SavedBufOpts
+---@field modifiable boolean
+---@field readonly boolean
+
+---Original buffer options saved while a buffer is previewed.
+---@type table<integer, lspeek.Preview.SavedBufOpts>
+local saved_buf_opts = {}
+
+---Lock a target buffer read-only for previewing.
+---@param buf integer
+function M.lock_target_buf(buf)
+  if not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+  if saved_buf_opts[buf] == nil then
+    saved_buf_opts[buf] = {
+      modifiable = vim.bo[buf].modifiable,
+      readonly = vim.bo[buf].readonly,
+    }
+  end
+  vim.bo[buf].modifiable = false
+end
+
+---Unlock a target buffer, restoring the options it had before previewing.
+---@param buf integer
+---@return boolean true when no other live previews use the buffer
+function M.unlock_target_buf(buf)
+  if is_buffer_in_previews(buf) then
+    return false
+  end
+  local orig = saved_buf_opts[buf]
+  saved_buf_opts[buf] = nil
+  if orig == nil or not vim.api.nvim_buf_is_valid(buf) then
+    return true
+  end
+  vim.bo[buf].modifiable = orig.modifiable
+  vim.bo[buf].readonly = orig.readonly
+  return true
+end
+
 ---Find the preview whose window handle matches.
 ---@param win integer?
 ---@return lspeek.Preview?
@@ -80,8 +120,9 @@ function Preview:close()
     self._winclosed_au = nil
   end
 
-  if not is_buffer_in_previews(self.target.buf) and vim.api.nvim_buf_is_valid(self.target.buf) then
-    vim.bo[self.target.buf].modifiable = true
+  local last = M.unlock_target_buf(self.target.buf)
+
+  if last and vim.api.nvim_buf_is_valid(self.target.buf) then
     for _, key in ipairs(vim.tbl_keys(config.options.keymaps)) do
       pcall(vim.keymap.del, "n", config.options.keymaps[key], { buffer = self.target.buf })
     end
