@@ -33,7 +33,7 @@ M.defaults = {
     },
   },
 
-  stack_limit = 5,
+  stack_limit = 10,
 
   select_first = false,
 
