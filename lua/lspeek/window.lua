@@ -42,21 +42,19 @@ local function set_preview_win_opts(win, target_buf)
   for opt, val in pairs(config.options.window.win_opts or {}) do
     local ok, err = pcall(vim.api.nvim_set_option_value, opt, val, { win = win })
     if not ok then
-      vim.notify(
-        ("lspeek: skipping invalid win_opts '%s': %s"):format(opt, err),
-        vim.log.levels.WARN
-      )
+      vim.notify(("lspeek: skipping invalid win_opts '%s': %s"):format(opt, err), vim.log.levels.WARN)
     end
   end
   Preview.lock_target_buf(target_buf)
 end
 
 ---Build a target descriptor from an LSP location and loaded buffer info.
----@param location lsp.Location|lsp.LocationLink
+---@param location lspeek.LspLocation|lspeek.LspLocationLink
 ---@param target_buf integer
 ---@param target_fname string
+---@param offset_encoding? string LSP offset encoding for this location
 ---@return lspeek.Preview.Target
-function M.build_target_from_location(location, target_buf, target_fname)
+function M.build_target_from_location(location, target_buf, target_fname, offset_encoding)
   local range = location.range or location.targetSelectionRange
   local pos = { line = 0, character = 0 }
 
@@ -71,6 +69,7 @@ function M.build_target_from_location(location, target_buf, target_fname)
     filename = vim.fn.fnamemodify(target_fname, ":t"),
     full_path = target_fname,
     uri = location.uri or location.targetUri,
+    offset_encoding = offset_encoding or "utf-16",
   }
 end
 
@@ -87,8 +86,7 @@ function M.create_preview_floating_window(target)
 
   local preview = Preview.new(target)
 
-  local win_config =
-    get_window_config(config.options.window.width, config.options.window.height, target.filename)
+  local win_config = get_window_config(config.options.window.width, config.options.window.height, target.filename)
 
   local win_ok, win = pcall(vim.api.nvim_open_win, target.buf, true, win_config)
   if win_ok then

@@ -1,5 +1,13 @@
 local M = {}
 
+---@class lspeek.LspLocation : lsp.Location
+---@field client_name? string
+---@field offset_encoding? string
+
+---@class lspeek.LspLocationLink : lsp.LocationLink
+---@field client_name? string
+---@field offset_encoding? string
+
 ---Compare two LSP positions (a < b).
 ---@param a lsp.Position
 ---@param b lsp.Position
@@ -23,14 +31,25 @@ local function pos_lte(a, b)
 end
 
 ---Convert an LSP 0-indexed position to a vim 1-indexed cursor {row, col}.
+---LSP `character` offsets are in the negotiated encoding (usually UTF-16),
+---while Vim columns are byte indices, so convert via vim.str_byteindex.
 ---@param pos lspeek.Preview.Pos
+---@param buf integer buffer to read the target line from
+---@param encoding string? LSP offset encoding ("utf-8"|"utf-16"|"utf-32")
 ---@return { [1]: integer, [2]: integer }
-function M.lsp_pos_to_vim_cursor(pos)
-  return { pos.line + 1, pos.character }
+function M.lsp_pos_to_vim_cursor(pos, buf, encoding)
+  encoding = encoding or "utf-16"
+  local row = pos.line
+  local col = pos.character
+  if col > 0 and vim.api.nvim_buf_is_valid(buf) then
+    local line = (vim.api.nvim_buf_get_lines(buf, row, row + 1, false))[1] or ""
+    col = vim.str_byteindex(line, encoding, col, false)
+  end
+  return { row + 1, col }
 end
 
 ---Check if a location's range includes the given search position.
----@param location lsp.Location|lsp.LocationLink
+---@param location lspeek.LspLocation|lspeek.LspLocationLink
 ---@param search_uri string
 ---@param search_pos lsp.Position
 ---@return boolean
@@ -57,10 +76,10 @@ function M.location_matches_position(location, search_uri, search_pos)
 end
 
 ---Filter out the location at the cursor position.
----@param locations (lsp.Location|lsp.LocationLink)[]
+---@param locations (lspeek.LspLocation|lspeek.LspLocationLink)[]
 ---@param search_uri string
 ---@param search_pos lsp.Position
----@return (lsp.Location|lsp.LocationLink)[]
+---@return (lspeek.LspLocation|lspeek.LspLocationLink)[]
 function M.exclude_at_cursor(locations, search_uri, search_pos)
   local filtered = {}
 
@@ -74,7 +93,7 @@ function M.exclude_at_cursor(locations, search_uri, search_pos)
 end
 
 ---Format a location for display in vim.ui.select.
----@param location lsp.Location|lsp.LocationLink
+---@param location lspeek.LspLocation|lspeek.LspLocationLink
 ---@return string
 function M.format_location(location)
   local fname = vim.uri_to_fname(M.normalize_uri(location.uri or location.targetUri))

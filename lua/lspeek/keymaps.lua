@@ -9,7 +9,6 @@ local M = {}
 ---@param preview lspeek.Preview
 local function jump_to_target(operation, preview)
   local target = preview.target
-  local target_pos = util.lsp_pos_to_vim_cursor(target.pos)
 
   if operation == "vsplit" or operation == "split" then
     vim.cmd(operation .. " " .. vim.fn.fnameescape(target.full_path))
@@ -21,7 +20,11 @@ local function jump_to_target(operation, preview)
     end
   end
 
-  pcall(vim.api.nvim_win_set_cursor, vim.api.nvim_get_current_win(), target_pos)
+  pcall(
+    vim.api.nvim_win_set_cursor,
+    vim.api.nvim_get_current_win(),
+    util.lsp_pos_to_vim_cursor(target.pos, vim.api.nvim_get_current_buf(), target.offset_encoding)
+  )
 end
 
 ---Close all previews then execute a jump operation.

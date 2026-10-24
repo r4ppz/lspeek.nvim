@@ -5,23 +5,27 @@ local util = require("lspeek.util")
 local M = {}
 
 ---Open a single LSP location in a preview window.
----@param location lsp.Location|lsp.LocationLink
+---@param location lspeek.LspLocation|lspeek.LspLocationLink
 local function open_preview(location)
   local uri = util.normalize_uri(location.uri or location.targetUri)
   local bufnr = util.ensure_loaded_buf(uri)
   local fname = vim.uri_to_fname(uri)
 
-  local target = window.build_target_from_location(location, bufnr, fname)
+  local target = window.build_target_from_location(location, bufnr, fname, location.offset_encoding)
 
   local preview = window.create_preview_floating_window(target)
 
   if preview and vim.api.nvim_win_is_valid(preview.win) then
-    pcall(vim.api.nvim_win_set_cursor, preview.win, util.lsp_pos_to_vim_cursor(target.pos))
+    pcall(
+      vim.api.nvim_win_set_cursor,
+      preview.win,
+      util.lsp_pos_to_vim_cursor(target.pos, target.buf, target.offset_encoding)
+    )
   end
 end
 
 ---Open a vim.ui.select picker or directly show the first location.
----@param locations (lsp.Location|lsp.LocationLink)[]
+---@param locations (lspeek.LspLocation|lspeek.LspLocationLink)[]
 ---@param label string
 local function open_or_pick_location(locations, label)
   vim.cmd("normal! m'")
@@ -41,22 +45,48 @@ local function open_or_pick_location(locations, label)
 end
 
 ---Collect and decorate locations from all LSP client responses.
----@param results table<integer, {err: any, result: any}>
----@return (lsp.Location|lsp.LocationLink)[]
+---@param results table<integer, {err: any, result: any, client: any, params: any}>
+---@return (lspeek.LspLocation|lspeek.LspLocationLink)[], boolean, boolean
 local function collect_client_locations(results)
   local all_locations = {}
+  local had_cursor = false
+  local had_error = false
+
   for client_id, res in pairs(results) do
-    local client = vim.lsp.get_client_by_id(client_id)
+    if res.err then
+      had_error = true
+    end
+
+    local client = res.client or vim.lsp.get_client_by_id(client_id)
     local client_name = client and client.name or "?"
+    local encoding = (client and client.offset_encoding) or "utf-16"
+
     if not res.err and res.result then
       local items = vim.islist(res.result) and res.result or { res.result }
+      ---@cast items (lspeek.LspLocation|lspeek.LspLocationLink)[]
+
+      local params = res.params
+      local search_uri = params and params.textDocument and params.textDocument.uri
+      local search_pos = params and params.position
+
       for _, loc in ipairs(items) do
-        loc.client_name = client_name
-        table.insert(all_locations, loc)
+        local at_cursor = search_uri ~= nil
+          and search_pos ~= nil
+          and util.location_matches_position(loc, search_uri, search_pos)
+
+        if at_cursor then
+          had_cursor = true
+        else
+          ---@cast loc lspeek.LspLocation
+          loc.client_name = client_name
+          loc.offset_encoding = encoding
+          table.insert(all_locations, loc)
+        end
       end
     end
   end
-  return all_locations
+
+  return all_locations, had_cursor, had_error
 end
 
 ---Send an LSP request and route results to the preview/picker flow.
@@ -69,31 +99,55 @@ local function peek_request(method, label)
     return
   end
 
-  local params = vim.lsp.util.make_position_params(0, "utf-16")
+  local results = {}
+  local remaining = #clients
+  local all_sent = false
 
-  vim.lsp.buf_request_all(0, method, params, function(results)
-    if not results or vim.tbl_isempty(results) then
+  local function handle_results()
+    if vim.tbl_isempty(results) then
       vim.notify(("No %s found"):format(label), vim.log.levels.INFO)
       return
     end
 
-    local all_locations = collect_client_locations(results)
-
-    if #all_locations == 0 then
-      vim.notify(("No %s found"):format(label), vim.log.levels.INFO)
-      return
-    end
-
-    local search_uri, search_pos = params.textDocument.uri, params.position
-    local locations = util.exclude_at_cursor(all_locations, search_uri, search_pos)
+    local locations, had_cursor, had_error = collect_client_locations(results)
 
     if #locations == 0 then
-      vim.notify(("Already at %s"):format(label), vim.log.levels.INFO)
+      if had_cursor and not had_error then
+        vim.notify(("Already at %s"):format(label), vim.log.levels.INFO)
+      else
+        vim.notify(("No %s found"):format(label), vim.log.levels.INFO)
+      end
       return
     end
 
     open_or_pick_location(locations, label)
-  end)
+  end
+
+  local function maybe_finish()
+    if not all_sent or remaining > 0 then
+      return
+    end
+    vim.schedule(function()
+      handle_results()
+    end)
+  end
+
+  for _, client in ipairs(clients) do
+    local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
+    client:request(method, params, function(err, result)
+      results[client.id] = {
+        err = err,
+        result = result,
+        client = client,
+        params = params,
+      }
+      remaining = remaining - 1
+      maybe_finish()
+    end, 0)
+  end
+
+  all_sent = true
+  maybe_finish()
 end
 
 ---Preview the LSP definition at cursor position.
