@@ -75,23 +75,6 @@ function M.location_matches_position(location, search_uri, search_pos)
   return pos_lte(startp, search_pos) and pos_lt(search_pos, endp)
 end
 
----Filter out the location at the cursor position.
----@param locations (lspeek.LspLocation|lspeek.LspLocationLink)[]
----@param search_uri string
----@param search_pos lsp.Position
----@return (lspeek.LspLocation|lspeek.LspLocationLink)[]
-function M.exclude_at_cursor(locations, search_uri, search_pos)
-  local filtered = {}
-
-  for _, loc in ipairs(locations) do
-    if not M.location_matches_position(loc, search_uri, search_pos) then
-      filtered[#filtered + 1] = loc
-    end
-  end
-
-  return filtered
-end
-
 ---Format a location for display in vim.ui.select.
 ---@param location lspeek.LspLocation|lspeek.LspLocationLink
 ---@return string
