@@ -8,20 +8,20 @@ local M = {}
 ---@param operation "vsplit"|"split"|"tab"|"edit"
 ---@param preview lspeek.Preview
 local function jump_to_target(operation, preview)
-  local target_pos = util.lsp_pos_to_vim_cursor(preview.target.pos)
+  local target = preview.target
+  local target_pos = util.lsp_pos_to_vim_cursor(target.pos)
 
   if operation == "vsplit" or operation == "split" then
-    vim.cmd(operation .. " " .. vim.fn.fnameescape(preview.target.full_path))
+    vim.cmd(operation .. " " .. vim.fn.fnameescape(target.full_path))
   elseif operation == "tab" then
-    vim.cmd("tabedit " .. vim.fn.fnameescape(preview.target.full_path))
+    vim.cmd("tabedit " .. vim.fn.fnameescape(target.full_path))
   elseif operation == "edit" then
-    local current_path = vim.api.nvim_buf_get_name(0)
-    if current_path ~= preview.target.full_path then
-      vim.cmd("edit " .. vim.fn.fnameescape(preview.target.full_path))
+    if vim.api.nvim_buf_get_name(0) ~= target.full_path then
+      vim.cmd("edit " .. vim.fn.fnameescape(target.full_path))
     end
   end
 
-  pcall(vim.api.nvim_win_set_cursor, 0, target_pos)
+  pcall(vim.api.nvim_win_set_cursor, vim.api.nvim_get_current_win(), target_pos)
 end
 
 ---Close all previews then execute a jump operation.
@@ -29,14 +29,7 @@ end
 ---@param preview lspeek.Preview
 local function open_target(operation, preview)
   Preview.close_all()
-
-  local source_win = vim.api.nvim_get_current_win()
   jump_to_target(operation, preview)
-
-  if operation ~= "edit" then
-    local source_pos = util.lsp_pos_to_vim_cursor(preview.source.pos)
-    pcall(vim.api.nvim_win_set_cursor, source_win, source_pos)
-  end
 end
 
 ---Set keymaps on the preview buffer for close/split/vsplit/tab/enter/prev/next.
