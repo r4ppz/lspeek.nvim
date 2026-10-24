@@ -164,11 +164,21 @@ end
 
 ---Close all stacked previews, suppressing WinClosed events to avoid recursion.
 function M.close_all()
+  local saved_eventignore = vim.go.eventignore
   vim.opt.eventignore:append("WinClosed")
-  while #stack > 0 do
-    pcall(stack[#stack].close, stack[#stack])
+
+  local ok, err = pcall(function()
+    while #stack > 0 do
+      pcall(stack[#stack].close, stack[#stack])
+    end
+  end)
+
+  -- Restore the user's exact original value.
+  vim.go.eventignore = saved_eventignore
+
+  if not ok then
+    error(err, 0)
   end
-  vim.opt.eventignore:remove("WinClosed")
 end
 
 ---Push a preview instance onto the stack.
