@@ -12,6 +12,7 @@ local M = {}
 ---@field filename string
 ---@field full_path string
 ---@field uri string
+---@field offset_encoding string
 
 ---@class lspeek.Preview
 ---@field target lspeek.Preview.Target
