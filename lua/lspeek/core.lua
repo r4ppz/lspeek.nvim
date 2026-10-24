@@ -134,7 +134,12 @@ local function peek_request(method, label)
 
   for _, client in ipairs(clients) do
     local params = vim.lsp.util.make_position_params(0, client.offset_encoding)
-    client:request(method, params, function(err, result)
+    local responded = false
+    local success, _ = client:request(method, params, function(err, result)
+      if responded then
+        return
+      end
+      responded = true
       results[client.id] = {
         err = err,
         result = result,
@@ -144,6 +149,18 @@ local function peek_request(method, label)
       remaining = remaining - 1
       maybe_finish()
     end, 0)
+
+    if not success and not responded then
+      responded = true
+      results[client.id] = {
+        err = "request failed",
+        result = nil,
+        client = client,
+        params = params,
+      }
+      remaining = remaining - 1
+      maybe_finish()
+    end
   end
 
   all_sent = true
