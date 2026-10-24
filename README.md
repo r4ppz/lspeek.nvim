@@ -25,7 +25,7 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
     },
 
     -- Limits the number of stacked preview windows.
-    stack_limit = 5,
+    stack_limit = 10,
 
     -- LSP can return multiple definitions
     -- (e.g., overloaded functions or multiple clients).
