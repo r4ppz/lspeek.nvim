@@ -51,20 +51,6 @@ local function set_preview_win_opts(win, target_buf)
   Preview.lock_target_buf(target_buf)
 end
 
----Capture the current editor state as a source descriptor.
----@return lspeek.Preview.Source
-function M.get_source()
-  return {
-    win = vim.api.nvim_get_current_win(),
-    buf = vim.api.nvim_get_current_buf(),
-    pos = {
-      line = vim.fn.line(".") - 1,
-      character = vim.fn.col(".") - 1,
-    },
-    uri = vim.uri_from_fname(vim.api.nvim_buf_get_name(0)),
-  }
-end
-
 ---Build a target descriptor from an LSP location and loaded buffer info.
 ---@param location lsp.Location|lsp.LocationLink
 ---@param target_buf integer
@@ -88,19 +74,18 @@ function M.build_target_from_location(location, target_buf, target_fname)
   }
 end
 
----Create a new preview floating window for the given source/target locations.
+---Create a new preview floating window for the given target location.
 ---Returns nil if the stack limit has been reached.
----@param source lspeek.Preview.Source
 ---@param target lspeek.Preview.Target
 ---@return lspeek.Preview|nil
-function M.create_preview_floating_window(source, target)
+function M.create_preview_floating_window(target)
   local limit = config.options.stack_limit or 0
   if limit > 0 and Preview.stack_size() >= limit then
     vim.notify(("lspeek: preview limit (%d) reached"):format(limit), vim.log.levels.INFO)
     return nil
   end
 
-  local preview = Preview.new(source, target)
+  local preview = Preview.new(target)
 
   local win_config =
     get_window_config(config.options.window.width, config.options.window.height, target.filename)

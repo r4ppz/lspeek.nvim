@@ -11,10 +11,9 @@ local function open_preview(location)
   local bufnr = util.ensure_loaded_buf(uri)
   local fname = vim.uri_to_fname(uri)
 
-  local source = window.get_source()
   local target = window.build_target_from_location(location, bufnr, fname)
 
-  local preview = window.create_preview_floating_window(source, target)
+  local preview = window.create_preview_floating_window(target)
 
   if preview and vim.api.nvim_win_is_valid(preview.win) then
     pcall(vim.api.nvim_win_set_cursor, preview.win, util.lsp_pos_to_vim_cursor(target.pos))

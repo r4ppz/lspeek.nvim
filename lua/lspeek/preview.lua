@@ -6,12 +6,6 @@ local M = {}
 ---@field line integer
 ---@field character integer
 
----@class lspeek.Preview.Source
----@field win integer
----@field buf integer
----@field pos lspeek.Preview.Pos
----@field uri string
-
 ---@class lspeek.Preview.Target
 ---@field buf integer
 ---@field pos lspeek.Preview.Pos
@@ -20,7 +14,6 @@ local M = {}
 ---@field uri string
 
 ---@class lspeek.Preview
----@field source lspeek.Preview.Source
 ---@field target lspeek.Preview.Target
 ---@field win? integer
 ---@field _winclosed_au? integer
@@ -190,12 +183,11 @@ function M.stack_size()
   return #stack
 end
 
----Create a preview instance from a source/target pair (not yet opened).
----@param source lspeek.Preview.Source
+---Create a preview instance from a target descriptor (not yet opened).
 ---@param target lspeek.Preview.Target
 ---@return lspeek.Preview
-function M.new(source, target)
-  return setmetatable({ source = source, target = target }, Preview)
+function M.new(target)
+  return setmetatable({ target = target }, Preview)
 end
 
 return M
