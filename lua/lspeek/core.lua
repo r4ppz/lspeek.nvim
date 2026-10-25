@@ -99,6 +99,19 @@ local function peek_request(method, label)
     return
   end
 
+  -- Only query clients that support the requested method.
+  local supported = {}
+  for _, client in ipairs(clients) do
+    if client:supports_method(method) then
+      table.insert(supported, client)
+    end
+  end
+  if #supported == 0 then
+    vim.notify(("No LSP client supports %s"):format(method), vim.log.levels.WARN)
+    return
+  end
+  clients = supported
+
   local results = {}
   local remaining = #clients
   local all_sent = false
