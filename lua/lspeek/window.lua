@@ -9,7 +9,7 @@ local M = {}
 ---@param height integer
 ---@param title string
 ---@return vim.api.keyset.win_config
-local function get_window_config(width, height, title)
+local function get_win_opts(width, height, title)
   local ui = vim.api.nvim_list_uis()[1]
   local screen_w, screen_h = ui.width, ui.height
   local cursor = vim.fn.screenpos(0, vim.fn.line("."), vim.fn.col("."))
@@ -54,7 +54,7 @@ end
 ---@param target_fname string
 ---@param offset_encoding? string LSP offset encoding for this location
 ---@return lspeek.Preview.Target
-function M.build_target_from_location(location, target_buf, target_fname, offset_encoding)
+function M.build_target_from_loc(location, target_buf, target_fname, offset_encoding)
   local range = location.range or location.targetSelectionRange
   local pos = { line = 0, character = 0 }
 
@@ -77,7 +77,7 @@ end
 ---Returns nil if the stack limit has been reached.
 ---@param target lspeek.Preview.Target
 ---@return lspeek.Preview|nil
-function M.create_preview_floating_window(target)
+function M.create_floating(target)
   local limit = config.options.stack_limit or 0
   if limit > 0 and Preview.stack_size() >= limit then
     vim.notify(("lspeek: preview limit (%d) reached"):format(limit), vim.log.levels.INFO)
@@ -86,9 +86,9 @@ function M.create_preview_floating_window(target)
 
   local preview = Preview.new(target)
 
-  local win_config = get_window_config(config.options.window.width, config.options.window.height, target.filename)
+  local win_opts = get_win_opts(config.options.window.width, config.options.window.height, target.filename)
 
-  local win_ok, win = pcall(vim.api.nvim_open_win, target.buf, true, win_config)
+  local win_ok, win = pcall(vim.api.nvim_open_win, target.buf, true, win_opts)
   if win_ok then
     preview.win = win
   end
