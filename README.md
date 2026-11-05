@@ -1,6 +1,6 @@
 # lspeek.nvim
 
-A small Neovim plugin to preview LSP definitions and type definitions in a read-only floating window.
+A small Neovim plugin to preview LSP definitions and type definitions in a stackable read-only floating window.
 
 [preview vid](https://github.com/user-attachments/assets/eff58491-54f3-469c-b918-c52f59c60dd2)
 
@@ -69,7 +69,7 @@ A small Neovim plugin to preview LSP definitions and type definitions in a read-
 - Stack multiple preview windows.
 - Navigate between stacked previews.
 - Preview definitions and type definitions in a _read-only_ floating window.
-- Open the target in a split, vsplit, tab, or current buffer.
+- Open the target in a split, vsplit, tab, or current window.
 - Combines results from all attached LSP clients.
 - Won't reopen a preview if you're already at the target location.
 - Saves your cursor position (`'`) before jumping.
