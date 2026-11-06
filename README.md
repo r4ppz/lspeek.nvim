@@ -35,13 +35,13 @@ A small Neovim plugin to preview LSP definitions and type definitions in a stack
 
     -- Keymaps available inside the preview window.
     keymaps = {
-      close = "q",    -- close preview
-      split = "s",    -- open target in horizontal split
-      vsplit = "v",   -- open target in vertical split
-      enter = "<CR>", -- open target in current window
-      tab = "t",      -- open target in new tab
-      prev = "[",     -- go to previous preview
-      next = "]",     -- go to next preview
+      close = "q",       -- close preview
+      split = "<c-s>",   -- open target in horizontal split
+      vsplit = "<c-v>",  -- open target in vertical split
+      enter = "<CR>",    -- open target in current window
+      tab = "<c-t>",     -- open target in new tab
+      prev = "<c-p>",    -- go to previous preview
+      next = "<c-n>",    -- go to next preview
     },
   },
 

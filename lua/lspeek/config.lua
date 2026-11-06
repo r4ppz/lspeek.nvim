@@ -39,12 +39,12 @@ M.defaults = {
 
   keymaps = {
     close = "q",
-    split = "s",
-    vsplit = "v",
+    split = "<c-s>",
+    vsplit = "<c-v>",
     enter = "<CR>",
-    tab = "t",
-    prev = "[",
-    next = "]",
+    tab = "<c-t>",
+    prev = "<c-p>",
+    next = "<c-n>",
   },
 }
 
