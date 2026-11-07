@@ -1,4 +1,5 @@
 local config = require("lspeek.config")
+local Preview = require("lspeek.preview")
 local window = require("lspeek.window")
 local util = require("lspeek.util")
 
@@ -6,14 +7,15 @@ local M = {}
 
 ---Open a single LSP location in a preview window.
 ---@param location lspeek.LspLocation|lspeek.LspLocationLink
-local function open_preview(location)
+---@param source_win integer
+local function open_preview(location, source_win)
   local uri = util.normalize_uri(location.uri or location.targetUri)
   local bufnr = util.ensure_loaded_buf(uri)
   local fname = vim.uri_to_fname(uri)
 
   local target = window.create_target(location, bufnr, fname, location.offset_encoding)
 
-  local preview = window.create_floating(target)
+  local preview = window.create_floating(target, source_win)
 
   if preview and vim.api.nvim_win_is_valid(preview.win) then
     pcall(
@@ -27,18 +29,19 @@ end
 ---Open a vim.ui.select picker or directly show the first location.
 ---@param locations (lspeek.LspLocation|lspeek.LspLocationLink)[]
 ---@param label string
-local function open_or_pick_location(locations, label)
+---@param source_win integer
+local function open_or_pick_location(locations, label, source_win)
   vim.cmd("normal! m'")
 
   if #locations == 1 or config.options.select_first then
-    open_preview(locations[1])
+    open_preview(locations[1], source_win)
   else
     vim.ui.select(locations, {
       prompt = "Select " .. label .. ":",
       format_item = util.format_location,
     }, function(choice)
       if choice then
-        open_preview(choice)
+        open_preview(choice, source_win)
       end
     end)
   end
@@ -93,6 +96,8 @@ end
 ---@param method string  e.g. "textDocument/definition"
 ---@param label string   human-readable label for notifications
 local function peek_request(method, label)
+  -- Resolve before the async request so later window changes don't affect the jump target.
+  local source_win = Preview.resolve_source_win(vim.api.nvim_get_current_win())
   local clients = vim.lsp.get_clients({ bufnr = 0 })
   if #clients == 0 then
     vim.notify("No LSP client attached", vim.log.levels.WARN)
@@ -133,7 +138,7 @@ local function peek_request(method, label)
       return
     end
 
-    open_or_pick_location(locations, label)
+    open_or_pick_location(locations, label, source_win)
   end
 
   local function maybe_finish()

@@ -16,6 +16,7 @@ local M = {}
 
 ---@class lspeek.Preview
 ---@field target lspeek.Preview.Target
+---@field source_win integer
 ---@field win? integer
 ---@field _winclosed_au? integer
 ---@field _closed? boolean
@@ -89,12 +90,32 @@ function M.get_preview_by_win(win)
   return nil
 end
 
----Close this preview, clean up autocmds and keymaps, focus the previous preview.
+---Resolve the source window, inheriting it when peeking from a preview.
+---@param win integer
+---@return integer
+function M.resolve_source_win(win)
+  local preview = M.get_preview_by_win(win)
+  return preview and preview.source_win or win
+end
+
+---Focus the source window if it is still valid.
+---@return boolean
+function Preview:focus_source_win()
+  if not self.source_win or not vim.api.nvim_win_is_valid(self.source_win) then
+    return false
+  end
+  vim.api.nvim_set_current_win(self.source_win)
+  return true
+end
+
+---Close this preview, cleanups and restore focus.
 function Preview:close()
   if self._closed then
     return
   end
   self._closed = true
+
+  local closed_current = self.win ~= nil and vim.api.nvim_get_current_win() == self.win
 
   if self.win and vim.api.nvim_win_is_valid(self.win) then
     local win = self.win
@@ -122,11 +143,17 @@ function Preview:close()
     end
   end
 
+  if not closed_current then
+    return
+  end
+
   if #stack > 0 then
     local top = stack[#stack]
     if top.win and vim.api.nvim_win_is_valid(top.win) then
       vim.api.nvim_set_current_win(top.win)
     end
+  else
+    self:focus_source_win()
   end
 end
 
@@ -196,9 +223,10 @@ end
 
 ---Create a preview instance from a target descriptor (not yet opened).
 ---@param target lspeek.Preview.Target
+---@param source_win integer
 ---@return lspeek.Preview
-function M.new(target)
-  return setmetatable({ target = target }, Preview)
+function M.new(target, source_win)
+  return setmetatable({ target = target, source_win = source_win }, Preview)
 end
 
 return M

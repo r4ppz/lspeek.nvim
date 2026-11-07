@@ -76,15 +76,16 @@ end
 ---Create a new preview floating window for the given target location.
 ---Returns nil if the stack limit has been reached.
 ---@param target lspeek.Preview.Target
+---@param source_win integer
 ---@return lspeek.Preview|nil
-function M.create_floating(target)
+function M.create_floating(target, source_win)
   local limit = config.options.stack_limit or 0
   if limit > 0 and Preview.stack_size() >= limit then
     vim.notify(("lspeek: preview limit (%d) reached"):format(limit), vim.log.levels.INFO)
     return nil
   end
 
-  local preview = Preview.new(target)
+  local preview = Preview.new(target, source_win)
 
   local win_opts = get_win_opts(config.options.window.width, config.options.window.height, target.filename)
 

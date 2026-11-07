@@ -27,11 +27,14 @@ local function jump_to_target(operation, preview)
   )
 end
 
----Close all previews then execute a jump operation.
+---Close previews and jump to the target from the source window.
 ---@param operation "vsplit"|"split"|"tab"|"edit"
 ---@param preview lspeek.Preview
 local function open_target(operation, preview)
   Preview.close_all()
+  -- Focus explicitly.
+  -- This might be redundant, but eh whatever.
+  preview:focus_source_win()
   jump_to_target(operation, preview)
 end
 
